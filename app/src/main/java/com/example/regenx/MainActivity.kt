@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
             RegenXTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
-                        name = "ReGeneration",
+                        name = "ReGeneration1",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
