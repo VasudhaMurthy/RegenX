@@ -1,7 +1,11 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+//    alias(libs.plugins.android.application)
+//    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -42,9 +46,10 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.5"
+        kotlinCompilerExtensionVersion = "1.5.11"
     }
 }
+
 
 dependencies {
     // Compose UI dependencies
@@ -58,10 +63,11 @@ dependencies {
     implementation(libs.androidx.material3)
 
     // ✅ Added manually (outside libs.versions.toml)
-    implementation("androidx.activity:activity-compose:1.8.1")
-    implementation("androidx.compose.material3:material3:1.2.0")
-    implementation("com.google.android.gms:play-services-location:21.0.1")
-    implementation("androidx.compose.ui:ui:1.6.3")// ✅ Location dependency
+    implementation(libs.androidx.activity.compose.v181)
+    implementation(libs.material3)
+    implementation(libs.play.services.location)
+    implementation(libs.ui)
+    implementation(libs.firebase.messaging.ktx)// ✅ Location dependency
 
     // Testing
     testImplementation(libs.junit)
@@ -71,4 +77,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.google.firebase.messaging.ktx)
+    implementation(libs.androidx.core.ktx.v1120)
 }
