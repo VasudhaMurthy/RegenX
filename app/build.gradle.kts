@@ -60,7 +60,9 @@ dependencies {
     // ✅ Added manually (outside libs.versions.toml)
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.compose.material3:material3:1.2.0")
-    implementation("com.google.android.gms:play-services-location:21.0.1") // ✅ Location dependency
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("androidx.compose.ui:ui:1.6.3")// ✅ Location dependency
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

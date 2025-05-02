@@ -50,110 +50,128 @@ package com.example.regenx
 
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
-import androidx.annotation.RequiresPermission
+import com.google.android.gms.location.*
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         setContent {
             var permissionGranted by remember { mutableStateOf(false) }
 
+            // Correct import and usage of rememberLauncherForActivityResult
             val permissionLauncher = rememberLauncherForActivityResult(
-                ActivityResultContracts.RequestPermission()
+                contract = ActivityResultContracts.RequestPermission()
             ) { isGranted ->
                 permissionGranted = isGranted
             }
 
+            // Request permission on first composition
             LaunchedEffect(Unit) {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                if (ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                } else {
+                    permissionGranted = true
+                }
             }
 
             MaterialTheme {
                 if (permissionGranted) {
-                    // Only call LocationFetcher if permission is granted
-                    if (ContextCompat.checkSelfPermission(
-                            this@MainActivity,
-                            Manifest.permission.ACCESS_FINE_LOCATION
-                        ) == PackageManager.PERMISSION_GRANTED) {
-                        LocationFetcher(fusedLocationClient = fusedLocationClient)
-                    }
+                    RealTimeLocationFetcher(fusedLocationClient)
                 } else {
-                    Text("Location permission is required.")
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Location permission is required.")
+                    }
                 }
             }
         }
-
     }
 }
 
 @Composable
-@RequiresPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-fun LocationFetcher(fusedLocationClient: FusedLocationProviderClient) {
+fun RealTimeLocationFetcher(fusedLocationClient: FusedLocationProviderClient) {
     var latitude by remember { mutableStateOf<Double?>(null) }
     var longitude by remember { mutableStateOf<Double?>(null) }
-    var permissionGranted by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        permissionGranted = isGranted
-        if (isGranted) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    if (it.latitude != 0.0) {
-                        latitude = it.latitude
-                    }
-                    longitude = it.longitude
+
+    // LocationCallback remembers the latest location updates
+    val locationCallback = remember {
+        object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    latitude = location.latitude
+                    longitude = location.longitude
                 }
             }
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        if (!permissionGranted) {
-            Text("Permission required to access location")
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }) {
-                Text("Allow Location Access")
-            }
+    DisposableEffect(Unit) {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            5000L
+        ).build()
+
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
         } else {
-            if (latitude != null && longitude != null) {
-                Text("Garbage Truck Location:")
+            error = "Location permission not granted."
+        }
+
+        onDispose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            error != null -> Text(error!!)
+            latitude != null && longitude != null -> Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Garbage Truck Location (Live):")
                 Text("Latitude: $latitude")
                 Text("Longitude: $longitude")
-            } else {
-                Text("Fetching location...")
             }
+            else -> Text("Fetching location...")
         }
     }
 }
