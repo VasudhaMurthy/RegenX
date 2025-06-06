@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">RegenX</string>
+    <string name="describe_issue">Describe issue...</string>
+    <string name="submit_complaint">Submit Complaint</string>
+    <string name="grievance_dashboard">Grievance Dashboard</string>
+    <string name="description">Description</string>
+    <string name="status">Status</string>
+    <string name="grievance_list_content_desc">List of grievances</string>
 </resources>

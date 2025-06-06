@@ -6,6 +6,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -43,6 +45,7 @@ android {
 
     buildFeatures {
         compose = true
+        viewBinding = true
     }
 
     composeOptions {
@@ -62,12 +65,14 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
+
     // ✅ Added manually (outside libs.versions.toml)
     implementation(libs.androidx.activity.compose.v181)
     implementation(libs.material3)
     implementation(libs.play.services.location)
     implementation(libs.ui)
-    implementation(libs.firebase.messaging.ktx)// ✅ Location dependency
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.androidx.recyclerview)// ✅ Location dependency
 
     // Testing
     testImplementation(libs.junit)
@@ -79,6 +84,22 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation(platform(libs.firebase.bom))
+    implementation(platform(libs.firebase.bom.v33150))
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.auth.ktx)
     implementation(libs.google.firebase.messaging.ktx)
     implementation(libs.androidx.core.ktx.v1120)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.material3)
+
+    // ViewModel + Fragment KTX
+    implementation(libs.androidx.lifecycle.viewmodel.ktx.v270)
+    implementation(libs.androidx.fragment.ktx.v162)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.navigation.fragment)
 }
