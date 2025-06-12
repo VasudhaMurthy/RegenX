@@ -9,6 +9,8 @@ import com.example.regenx.screens.AuthChoiceScreen
 import com.example.regenx.screens.LoginScreen
 import com.example.regenx.screens.SignupScreen
 import com.example.regenx.screens.DashboardScreen
+import com.example.regenx.screens.officials.ViewComplaintsScreen
+import com.example.regenx.screens.shared.RaiseComplaintScreen
 
 @Composable
 fun AppNavGraph() {
@@ -33,6 +35,9 @@ fun AppNavGraph() {
         composable("residentDashboard") { com.example.regenx.screens.residents.ResidentDashboard(navController) }
         composable("collectorDashboard") { com.example.regenx.screens.collectors.CollectorDashboard(navController) }
         composable("officialDashboard") { com.example.regenx.screens.officials.OfficialDashboard(navController) }
+        composable("raiseComplaint") { RaiseComplaintScreen(navController) }
+        composable("viewComplaints") { ViewComplaintsScreen(navController) }
+
     }
 
 
