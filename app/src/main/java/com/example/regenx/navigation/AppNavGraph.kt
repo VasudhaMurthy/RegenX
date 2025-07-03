@@ -37,6 +37,8 @@ fun AppNavGraph() {
         composable("officialDashboard") { com.example.regenx.screens.officials.OfficialDashboard(navController) }
         composable("raiseComplaint") { RaiseComplaintScreen(navController) }
         composable("viewComplaints") { ViewComplaintsScreen(navController) }
+        composable("settings") { com.example.regenx.screens.shared.SettingsScreen(navController) } // ✅ Add this line
+        composable("profileScreen") { com.example.regenx.screens.shared.ProfileScreen(navController) }
 
     }
 

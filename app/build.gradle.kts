@@ -110,4 +110,9 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("androidx.browser:browser:1.3.0")
+
+    //for icons in resident module
+    implementation("androidx.compose.material:material-icons-extended")
+
+
 }
