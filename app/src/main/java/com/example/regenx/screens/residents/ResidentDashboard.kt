@@ -117,6 +117,15 @@ fun ResidentDashboard(navController: NavController) {
             }
 
             // Feature Cards
+
+            FeatureCard(
+                title = "Locate Garbage Truck",
+                description = "Track the live location of the garbage collection truck",
+                icon = Icons.Default.LocalShipping,
+                gradient = Brush.linearGradient(colors = listOf(Color(0xFFFFAB91), Color(0xFFFF7043))),
+                onClick = { navController.navigate("locateGarbageTruck") }
+            )
+
             FeatureCard(
                 title = "Waste Segregation (AI)",
                 description = "Scan your waste to get instant segregation tips",

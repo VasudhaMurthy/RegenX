@@ -1,4 +1,4 @@
-package com.example.regenx.screens
+package com.example.regenx.screens.shared
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -22,19 +22,16 @@ import androidx.navigation.compose.rememberNavController
 import com.example.regenx.R
 import com.example.regenx.ui.components.RoleButton
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 @Composable
-fun SignupScreen(navController: NavController) {
+fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
     var selectedRole by remember { mutableStateOf<String?>(null) }
-    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val auth = Firebase.auth
-    val firestore = Firebase.firestore
 
     Box(modifier = Modifier.fillMaxSize()) {
         Text(
@@ -56,12 +53,12 @@ fun SignupScreen(navController: NavController) {
         ) {
             Image(
                 painter = painterResource(id = R.drawable.my_icon),
-                contentDescription = "Signup Icon",
+                contentDescription = "Login Icon",
                 modifier = Modifier.size(120.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Sign Up as", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+            Text("Login as", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
             Spacer(modifier = Modifier.height(32.dp))
 
             RoleButton("Resident", selectedRole) { selectedRole = "Resident" }
@@ -73,13 +70,6 @@ fun SignupScreen(navController: NavController) {
             selectedRole?.let { role ->
                 Spacer(modifier = Modifier.height(32.dp))
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Full Name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
@@ -90,61 +80,46 @@ fun SignupScreen(navController: NavController) {
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password (min 6 chars)") },
+                    label = { Text("Password") },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
-                        if (name.isBlank() || email.isBlank() || password.length < 6) {
-                            Toast.makeText(context, "Please fill all fields correctly", Toast.LENGTH_SHORT).show()
+                        if (email.isBlank() || password.isBlank()) {
+                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
                         isLoading = true
-                        auth.createUserWithEmailAndPassword(email, password)
+                        auth.signInWithEmailAndPassword(email, password)
                             .addOnCompleteListener { task ->
+                                isLoading = false
                                 if (task.isSuccessful) {
-                                    val userId = auth.currentUser?.uid ?: ""
-                                    firestore.collection("users").document(userId)
-                                        .set(
-                                            mapOf(
-                                                "name" to name,
-                                                "email" to email,
-                                                "role" to role
-                                            )
-                                        )
-                                        .addOnSuccessListener {
-                                            isLoading = false
-                                            Toast.makeText(context, "Account created!", Toast.LENGTH_SHORT).show()
-                                            // Role-based navigation
-                                            when (role) {
-                                                "Resident" -> navController.navigate("residentDashboard") {
-                                                    popUpTo("signup") { inclusive = true }
-                                                }
-                                                "Garbage Collector" -> navController.navigate("collectorDashboard") {
-                                                    popUpTo("signup") { inclusive = true }
-                                                }
-                                                "Official" -> navController.navigate("officialDashboard") {
-                                                    popUpTo("signup") { inclusive = true }
-                                                }
-                                                else -> navController.navigate("home")
-                                            }
+                                    Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+
+                                    // Role-based navigation
+                                    when (selectedRole) {
+                                        "Resident" -> navController.navigate("residentDashboard") {
+                                            popUpTo("login") { inclusive = true }
                                         }
-                                        .addOnFailureListener { e ->
-                                            isLoading = false
-                                            Toast.makeText(context, "Error saving data: ${e.message}", Toast.LENGTH_LONG).show()
+                                        "Garbage Collector" -> navController.navigate("collectorDashboard") {
+                                            popUpTo("login") { inclusive = true }
                                         }
+                                        "Official" -> navController.navigate("officialDashboard") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                        else -> navController.navigate("home")
+                                    }
                                 } else {
-                                    isLoading = false
-                                    Toast.makeText(context, "Signup failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading
                 ) {
-                    Text(if (isLoading) "Creating account..." else "Sign Up")
+                    Text(if (isLoading) "Logging in..." else "Login")
                 }
             }
         }
@@ -153,6 +128,6 @@ fun SignupScreen(navController: NavController) {
 
 @Preview(showBackground = true)
 @Composable
-fun SignupScreenPreview() {
-    SignupScreen(navController = rememberNavController())
+fun LoginScreenPreview() {
+    LoginScreen(navController = rememberNavController())
 }

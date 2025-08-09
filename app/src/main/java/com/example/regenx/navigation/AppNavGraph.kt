@@ -4,11 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.regenx.screens.HomeScreen
-import com.example.regenx.screens.AuthChoiceScreen
-import com.example.regenx.screens.LoginScreen
-import com.example.regenx.screens.SignupScreen
-import com.example.regenx.screens.DashboardScreen
+import com.example.regenx.screens.shared.HomeScreen
+import com.example.regenx.screens.shared.AuthChoiceScreen
+import com.example.regenx.screens.shared.LoginScreen
+import com.example.regenx.screens.shared.SignupScreen
+import com.example.regenx.screens.shared.DashboardScreen
 import com.example.regenx.screens.officials.ViewComplaintsScreen
 import com.example.regenx.screens.shared.RaiseComplaintScreen
 

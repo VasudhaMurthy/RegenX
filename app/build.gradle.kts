@@ -114,5 +114,6 @@ dependencies {
     //for icons in resident module
     implementation("androidx.compose.material:material-icons-extended")
 
-
+    implementation("com.google.android.gms:play-services-location:21.2.0")
+    implementation("com.google.firebase:firebase-database:20.3.0")
 }

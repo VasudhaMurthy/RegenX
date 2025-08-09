@@ -1,4 +1,4 @@
-package com.example.regenx.screens
+package com.example.regenx.screens.shared
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
