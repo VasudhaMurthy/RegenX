@@ -118,4 +118,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database:20.3.0")
 
     implementation ("androidx.appcompat:appcompat:1.7.0")
+
+    implementation ("com.google.maps.android:maps-compose:2.11.4")
+    implementation ("com.google.android.gms:play-services-maps:18.1.0")
+    implementation ("com.google.firebase:firebase-firestore:24.4.6")
 }

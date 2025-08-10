@@ -32,15 +32,19 @@ fun AppNavGraph() {
             val userType = backStackEntry.arguments?.getString("userType") ?: "resident"
             DashboardScreen(userType)
         }
+
+        // 🔹 Resident routes
         composable("residentDashboard") { com.example.regenx.screens.residents.ResidentDashboard(navController) }
+        composable("locateGarbageTruck") { com.example.regenx.screens.residents.LocateGarbageTruckScreen() }
+
+        // 🔹 Collector & official routes
         composable("collectorDashboard") { com.example.regenx.screens.collectors.CollectorDashboard(navController) }
         composable("officialDashboard") { com.example.regenx.screens.officials.OfficialDashboard(navController) }
+
+        // 🔹 Shared features
         composable("raiseComplaint") { RaiseComplaintScreen(navController) }
         composable("viewComplaints") { ViewComplaintsScreen(navController) }
-        composable("settings") { com.example.regenx.screens.shared.SettingsScreen(navController) } // ✅ Add this line
+        composable("settings") { com.example.regenx.screens.shared.SettingsScreen(navController) }
         composable("profileScreen") { com.example.regenx.screens.shared.ProfileScreen(navController) }
-
     }
-
-
 }
