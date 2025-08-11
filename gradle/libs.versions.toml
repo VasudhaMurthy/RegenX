@@ -27,6 +27,8 @@ playServicesLocation = "21.3.0"
 ui = "1.8.0"
 firebaseMessagingKtx = "24.1.1"
 recyclerview = "1.4.0"
+uiText = "1.8.3"
+foundation = "1.8.3"
 
 [libraries]
 androidx-activity-compose-v181 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -67,6 +69,8 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebaseMessagingKtx" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

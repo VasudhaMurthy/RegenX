@@ -8,17 +8,32 @@ import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.example.regenx.R
 import com.example.regenx.backend.CollectorLocationService
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +41,25 @@ fun CollectorDashboard(navController: NavController) {
     val context = LocalContext.current
     val activity = context as Activity
 
-    // 1. Set up permissions array
+    // Fetch collector's name
+    var collectorName by remember { mutableStateOf("Collector") }
+    LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        uid?.let {
+            FirebaseFirestore.getInstance().collection("users")
+                .document(it)
+                .get()
+                .addOnSuccessListener { document ->
+                    val firstName = document.getString("firstName")
+                    val lastName = document.getString("lastName")
+                    if (!firstName.isNullOrEmpty() && !lastName.isNullOrEmpty()) {
+                        collectorName = "$firstName $lastName"
+                    }
+                }
+        }
+    }
+
+    // Location permissions
     val locationPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -40,7 +73,6 @@ fun CollectorDashboard(navController: NavController) {
         )
     }
 
-    // 2. Create the permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
@@ -58,7 +90,6 @@ fun CollectorDashboard(navController: NavController) {
         }
     }
 
-    // 3. Only launch permission dialog when Composable first composes
     LaunchedEffect(Unit) {
         val missingPermissions = locationPermissions.filter {
             ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
@@ -76,30 +107,124 @@ fun CollectorDashboard(navController: NavController) {
         }
     }
 
-    // 4. UI
+    // Reusable FeatureCard composable as used in Resident and Official dashboards
+    @Composable
+    fun FeatureCard(
+        title: String,
+        description: String,
+        iconId: Int,
+        gradientColors: List<Color>,
+        onClick: () -> Unit
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp)
+                .clickable { onClick() },
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(brush = Brush.linearGradient(colors = gradientColors))
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(iconId),
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Collector Dashboard") }) }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Collector Dashboard",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                actions = {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_profile),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .clickable { navController.navigate("profileScreen") }
+                            .padding(end = 8.dp)
+                    )
+                    IconButton(onClick = { navController.navigate("settings") }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings"
+                        )
+                    }
+                }
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Welcome, Collector!",
-                fontSize = 28.sp,
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(Modifier.height(32.dp))
-            Button(
-                onClick = { navController.navigate("raiseComplaint") },
-                modifier = Modifier.fillMaxWidth()
+            // Welcome message
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("SwaBhaVi (Raise Complaint)")
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Hey, $collectorName 👋",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Here’s what you can do today 🚀",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            FeatureCard(
+                title = "SwaBhaVi (Raise Complaint)",
+                description = "Report missed pickups or illegal dumping",
+                iconId = R.drawable.ic_launcher_foreground,  // replace with your complaint icon
+                gradientColors = listOf(Color(0xFFFFCC80), Color(0xFFFFA726)),
+                onClick = { navController.navigate("raiseComplaint") }
+            )
+
+            // Add more feature cards if needed
         }
     }
 }

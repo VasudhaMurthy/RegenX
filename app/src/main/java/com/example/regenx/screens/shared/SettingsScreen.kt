@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +47,11 @@ fun SettingsScreen(navController: NavController) {
                 // TODO: Navigate or show contact info
             }
             SettingOption("Logout", Icons.Default.ExitToApp) {
-                // TODO: Logout logic
+                FirebaseAuth.getInstance().signOut()
+                // After logout, navigate back to splash so it will redirect to login
+                navController.navigate("splash") {
+                    popUpTo(0) // clears backstack so user can't go back without logging in
+                }
             }
         }
     }

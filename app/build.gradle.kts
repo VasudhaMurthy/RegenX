@@ -72,7 +72,9 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.ui)
     implementation(libs.firebase.messaging.ktx)
-    implementation(libs.androidx.recyclerview)// ✅ Location dependency
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.ui.text)
+    implementation(libs.androidx.foundation)// ✅ Location dependency
 
     // Testing
     testImplementation(libs.junit)

@@ -1,133 +1,123 @@
 package com.example.regenx.screens.shared
 
-import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.regenx.R
-import com.example.regenx.ui.components.RoleButton
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+
 
 @Composable
-fun LoginScreen(navController: NavController) {
-    val context = LocalContext.current
-    var selectedRole by remember { mutableStateOf<String?>(null) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    val auth = Firebase.auth
+fun LoginScreen(navController: NavController, role: String) {
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = "ReGenX",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF2E7D32),
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
+    var identifier by remember { mutableStateOf("") } // Email or Collector ID
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Login as $role", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val identifierLabel = when(role) {
+            "COLLECTOR" -> "Collector ID"
+            else -> "Email"
+        }
+
+        OutlinedTextField(
+            value = identifier,
+            onValueChange = { identifier = it },
+            label = { Text(identifierLabel) },
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.my_icon),
-                contentDescription = "Login Icon",
-                modifier = Modifier.size(120.dp)
-            )
+        Spacer(modifier = Modifier.height(8.dp))
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Login as", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
-            Spacer(modifier = Modifier.height(32.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible)
+                    painterResource(id = R.drawable.visibility) // eye icon visible
+                else
+                    painterResource(id = R.drawable.visibility_off) // eye icon hidden
 
-            RoleButton("Resident", selectedRole) { selectedRole = "Resident" }
-            Spacer(modifier = Modifier.height(16.dp))
-            RoleButton("Garbage Collector", selectedRole) { selectedRole = "Garbage Collector" }
-            Spacer(modifier = Modifier.height(16.dp))
-            RoleButton("Official", selectedRole) { selectedRole = "Official" }
-
-            selectedRole?.let { role ->
-                Spacer(modifier = Modifier.height(32.dp))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = {
-                        if (email.isBlank() || password.isBlank()) {
-                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-                        isLoading = true
-                        auth.signInWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
-                                isLoading = false
-                                if (task.isSuccessful) {
-                                    Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-
-                                    // Role-based navigation
-                                    when (selectedRole) {
-                                        "Resident" -> navController.navigate("residentDashboard") {
-                                            popUpTo("login") { inclusive = true }
-                                        }
-                                        "Garbage Collector" -> navController.navigate("collectorDashboard") {
-                                            popUpTo("login") { inclusive = true }
-                                        }
-                                        "Official" -> navController.navigate("officialDashboard") {
-                                            popUpTo("login") { inclusive = true }
-                                        }
-                                        else -> navController.navigate("home")
-                                    }
-                                } else {
-                                    Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading
-                ) {
-                    Text(if (isLoading) "Logging in..." else "Login")
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(painter = image, contentDescription = if (passwordVisible) "Hide password" else "Show password", modifier = Modifier.size(28.dp))
                 }
             }
-        }
-    }
-}
+        )
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    LoginScreen(navController = rememberNavController())
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (role == "COLLECTOR") {
+                    // Convert Collector ID to the fake email used in signup
+                    val loginEmail = "$identifier@collectors.regenx.com"
+
+                    auth.signInWithEmailAndPassword(loginEmail, password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                navController.navigate("collectorDashboard")
+                            } else {
+                                println("Login failed: ${task.exception?.message}")
+                            }
+                        }
+
+                } else {
+                    // Email-based login for Residents and Officials
+                    auth.signInWithEmailAndPassword(identifier, password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                when (role) {
+                                    "RESIDENT" -> navController.navigate("residentDashboard")
+                                    "OFFICIAL" -> navController.navigate("officialDashboard")
+                                }
+                            } else {
+                                println("Login failed: ${task.exception?.message}")
+                            }
+                        }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Login")
+        }
+
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        ClickableText(
+            text = AnnotatedString("Not a user? Sign Up"),
+            style = LocalTextStyle.current.copy(
+                fontSize = 18.sp, // Bigger text
+                color = MaterialTheme.colorScheme.primary
+            ),
+            onClick = { navController.navigate("signup/$role") }
+        )
+    }
 }
