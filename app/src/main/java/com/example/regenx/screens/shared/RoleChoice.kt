@@ -72,5 +72,16 @@ fun RoleChoice(navController: NavController) {
         ) {
             Text("Official", fontSize = 18.sp)
         }
+
+        // ✅ New Scrap Buyer button
+        Button(
+            onClick = { navController.navigate("login/SCRAP_BUYER") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Scrap Buyer", fontSize = 18.sp)
+        }
     }
 }

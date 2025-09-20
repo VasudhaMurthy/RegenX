@@ -138,6 +138,7 @@ fun CollectorDashboard(navController: NavController) {
                         modifier = Modifier.size(40.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
+
                     Column {
                         Text(
                             text = title,
@@ -152,6 +153,7 @@ fun CollectorDashboard(navController: NavController) {
                         )
                     }
                 }
+
             }
         }
     }
@@ -222,6 +224,13 @@ fun CollectorDashboard(navController: NavController) {
                 iconId = R.drawable.ic_launcher_foreground,  // replace with your complaint icon
                 gradientColors = listOf(Color(0xFFFFCC80), Color(0xFFFFA726)),
                 onClick = { navController.navigate("raiseComplaint") }
+            )
+            FeatureCard(
+                title = "Post Waste for Sale",
+                description = "List your collected waste for scrap buyers to purchase",
+                iconId = R.drawable.ic_post, // Replace with an appropriate icon from your drawable resources
+                gradientColors = listOf(Color(0xFF90CAF9), Color(0xFF42A5F5)),
+                onClick = { navController.navigate("postWasteScreen") } // Navigate to your post waste screen
             )
 
             // Add more feature cards if needed
