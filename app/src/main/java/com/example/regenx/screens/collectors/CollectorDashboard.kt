@@ -219,12 +219,13 @@ fun CollectorDashboard(navController: NavController) {
             Spacer(modifier = Modifier.height(32.dp))
 
             FeatureCard(
-                title = "SwaBhaVi (Raise Complaint)",
-                description = "Report missed pickups or illegal dumping",
-                iconId = R.drawable.ic_launcher_foreground,  // replace with your complaint icon
-                gradientColors = listOf(Color(0xFFFFCC80), Color(0xFFFFA726)),
-                onClick = { navController.navigate("raiseComplaint") }
+                title = "Report Issue",
+                description = "Log collection difficulties or route problems",
+                iconId = R.drawable.ic_launcher_foreground, // replace with your complaint icon
+                gradientColors = listOf(Color(0xFF81D4FA), Color(0xFF29B6F6)),
+                onClick = { navController.navigate("complaint/COLLECTOR") }
             )
+
             FeatureCard(
                 title = "Post Waste for Sale",
                 description = "List your collected waste for scrap buyers to purchase",

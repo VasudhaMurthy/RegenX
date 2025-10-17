@@ -181,8 +181,14 @@ fun AppNavGraph() {
         composable("scrapDashboard") {
             com.example.regenx.screens.collectors.scrapCollectors.ScrapCollectorDashboard(navController)
         }
+
+        composable("complaint/{role}") { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: "resident"
+            com.example.regenx.screens.shared.RaiseComplaintScreen(navController)
+        }
+
+
         // 🔹 Shared features
-        composable("raiseComplaint") { RaiseComplaintScreen(navController) }
         composable("viewComplaints") { ViewComplaintsScreen(navController) }
         composable("settings") { com.example.regenx.screens.shared.SettingsScreen(navController) }
         composable("profileScreen") { com.example.regenx.screens.shared.ProfileScreen(navController) }

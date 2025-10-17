@@ -147,7 +147,7 @@ fun ResidentDashboard(navController: NavController) {
                 description = "Report missed pickups or illegal dumping",
                 icon = Icons.Default.ReportProblem,
                 gradient = Brush.linearGradient(colors = listOf(Color(0xFFFFCC80), Color(0xFFFFA726))),
-                onClick = { navController.navigate("raiseComplaint") }
+                onClick = { navController.navigate("complaint/RESIDENT") }
             )
 
             // Tip of the day
