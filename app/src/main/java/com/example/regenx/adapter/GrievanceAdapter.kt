@@ -4,7 +4,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.regenx.databinding.ItemGrievanceBinding
-import com.example.regenx.model.Grievance
+import com.example.regenx.models.Grievance
 
 class GrievanceAdapter : RecyclerView.Adapter<GrievanceAdapter.GrievanceViewHolder>() {
     private var items: List<Grievance> = emptyList()

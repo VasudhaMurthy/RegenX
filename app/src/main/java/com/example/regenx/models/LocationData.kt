@@ -1,4 +1,4 @@
-package com.example.regenx.model
+package com.example.regenx.models
 
 data class LocationData(
     val latitude: Double,

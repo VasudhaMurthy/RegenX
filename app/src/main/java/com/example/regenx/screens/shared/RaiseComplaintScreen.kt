@@ -32,7 +32,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RaiseComplaintScreen(navController: NavController) {
+fun RaiseComplaintScreen(navController: NavController, role: String ) {
     val context = LocalContext.current
     val auth = Firebase.auth
     val firestore = Firebase.firestore
@@ -169,12 +169,15 @@ fun RaiseComplaintScreen(navController: NavController) {
 
                     uploadTask.addOnSuccessListener {
                         ref.downloadUrl.addOnSuccessListener { downloadUrl ->
+                            val userType = role.lowercase()
                             val complaint = hashMapOf(
                                 "userId" to uid,
+                                "userType" to role.lowercase(), // add this line 👈
                                 "subject" to subject,
                                 "description" to description,
                                 "photoUrl" to downloadUrl.toString(),
-                                "timestamp" to System.currentTimeMillis()
+                                "timestamp" to System.currentTimeMillis(),
+                                "status" to "pending" // default status
                             )
                             firestore.collection("complaints")
                                 .add(complaint)

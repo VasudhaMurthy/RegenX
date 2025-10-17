@@ -125,15 +125,16 @@
 package com.example.regenx.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.regenx.screens.officials.ComplaintDetailsScreen
 import com.example.regenx.screens.shared.HomeScreen
 import com.example.regenx.screens.shared.RoleChoice
 import com.example.regenx.screens.shared.LoginScreen
 import com.example.regenx.screens.shared.SignupScreen
 import com.example.regenx.screens.officials.ViewComplaintsScreen
-import com.example.regenx.screens.shared.RaiseComplaintScreen
 import com.example.regenx.screens.shared.SplashScreen
 
 @Composable
@@ -184,12 +185,16 @@ fun AppNavGraph() {
 
         composable("complaint/{role}") { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "resident"
-            com.example.regenx.screens.shared.RaiseComplaintScreen(navController)
+            com.example.regenx.screens.shared.RaiseComplaintScreen(navController,role)
         }
 
+        composable("complaintDetails/{complaintId}") { backStackEntry ->
+            val complaintId = backStackEntry.arguments?.getString("complaintId") ?: ""
+            com.example.regenx.screens.officials.ComplaintDetailsScreen(navController, complaintId)
+        }
 
-        // 🔹 Shared features
-        composable("viewComplaints") { ViewComplaintsScreen(navController) }
+            // 🔹 Shared features
+        composable("viewComplaints") { ViewComplaintsScreen(navController = navController) }
         composable("settings") { com.example.regenx.screens.shared.SettingsScreen(navController) }
         composable("profileScreen") { com.example.regenx.screens.shared.ProfileScreen(navController) }
     }
