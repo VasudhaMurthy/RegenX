@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
@@ -22,12 +23,16 @@ fun ComplaintDetailsScreen(navController: NavController, complaintId: String) {
     val firestore = Firebase.firestore
     var complaint by remember { mutableStateOf<Map<String, Any>?>(null) }
 
-    LaunchedEffect(complaintId) {
-        firestore.collection("complaints").document(complaintId)
-            .get()
-            .addOnSuccessListener { doc ->
-                complaint = doc.data
+    // ✅ Use DisposableEffect to manage Firestore listener lifecycle
+    DisposableEffect(complaintId) {
+        val listener: ListenerRegistration = firestore.collection("complaints").document(complaintId)
+            .addSnapshotListener { doc, _ ->
+                complaint = doc?.data
             }
+
+        onDispose {
+            listener.remove()
+        }
     }
 
     Scaffold(
@@ -54,6 +59,7 @@ fun ComplaintDetailsScreen(navController: NavController, complaintId: String) {
             else "Unknown date"
 
             var localStatus by remember { mutableStateOf(status) }
+            LaunchedEffect(status) { localStatus = status }
 
             Column(
                 modifier = Modifier
@@ -64,7 +70,7 @@ fun ComplaintDetailsScreen(navController: NavController, complaintId: String) {
             ) {
                 Text(subject, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(8.dp))
-                Text("Filed by: ${userType.capitalize()}")
+                Text("Filed by: ${userType.replaceFirstChar { it.uppercase() }}")
                 Text("Date: $date")
                 Spacer(Modifier.height(12.dp))
                 Text(description)
