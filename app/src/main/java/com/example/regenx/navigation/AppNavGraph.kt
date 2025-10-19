@@ -192,8 +192,15 @@ fun AppNavGraph() {
             val complaintId = backStackEntry.arguments?.getString("complaintId") ?: ""
             com.example.regenx.screens.officials.ComplaintDetailsScreen(navController, complaintId)
         }
+        composable("postwasteScreen") {
+            com.example.regenx.screens.collectors.PostWasteScreen(navController)
+        }
+        composable("pickupRequests") {
+            com.example.regenx.screens.collectors.scrapCollectors.NearbyPickupRequestsScreen()
+        }
 
-            // 🔹 Shared features
+
+        // 🔹 Shared features
         composable("viewComplaints") { ViewComplaintsScreen(navController = navController) }
         composable("settings") { com.example.regenx.screens.shared.SettingsScreen(navController) }
         composable("profileScreen") { com.example.regenx.screens.shared.ProfileScreen(navController) }
