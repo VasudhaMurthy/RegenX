@@ -82,7 +82,7 @@ fun ScrapCollectorDashboard(navController: NavController) {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "In the mood to Recycle, Buy it! 🚚",
+                        text = "In the mood to Recycle, take it! 🚚",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )

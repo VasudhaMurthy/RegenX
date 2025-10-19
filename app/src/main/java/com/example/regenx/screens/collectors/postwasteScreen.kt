@@ -84,11 +84,19 @@ fun PostWasteScreen(navController: NavController) {
                     db.collection("wasteForSale")
                         .add(postData)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Waste posted successfully!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Waste posted successfully!",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             navController.popBackStack() // Go back after posting
                         }
                         .addOnFailureListener {
-                            Toast.makeText(context, "Failed to post waste: ${it.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Failed to post waste: ${it.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                 },
                 shape = RoundedCornerShape(10.dp),
