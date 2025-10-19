@@ -19,7 +19,8 @@
 //import androidx.compose.foundation.rememberScrollState
 //import androidx.compose.foundation.verticalScroll
 //
-//enum class UserType { RESIDENT, COLLECTOR, OFFICIAL }
+//// ✅ Added SCRAP_BUYER role
+//enum class UserType { RESIDENT, COLLECTOR, OFFICIAL, SCRAP_BUYER }
 //
 //@Composable
 //fun SignupScreen(navController: NavController, role: String) {
@@ -30,7 +31,6 @@
 //
 //    // Common fields
 //    var firstName by remember { mutableStateOf("") }
-//    var middleName by remember { mutableStateOf("") }
 //    var lastName by remember { mutableStateOf("") }
 //    var phone by remember { mutableStateOf("") }
 //    var password by remember { mutableStateOf("") }
@@ -38,28 +38,32 @@
 //    var passwordVisible by remember { mutableStateOf(false) }
 //    var confirmPasswordVisible by remember { mutableStateOf(false) }
 //
-//    // Role-specific fields
+//    // Resident
 //    var aadhar by remember { mutableStateOf("") }
 //    var email by remember { mutableStateOf("") }
-//    var address by remember { mutableStateOf("") }  // resident-specific
+//    var address by remember { mutableStateOf("") }
 //
+//    // Collector
 //    var vehicleNo by remember { mutableStateOf("") }
-//    var collectorId by remember { mutableStateOf("") }  // instead of area collecting
+//    var collectorId by remember { mutableStateOf("") }
 //    var licenseNo by remember { mutableStateOf("") }
 //
+//    // Official
 //    var govtRole by remember { mutableStateOf("") }
 //    var govtId by remember { mutableStateOf("") }
 //    var areaLeading by remember { mutableStateOf("") }
 //    var govtEmail by remember { mutableStateOf("") }
 //
-//    // Dropdown toggle
-//    var expanded by remember { mutableStateOf(false) }
+//    // Scrap Buyer (✅ New role)
+//    var businessName by remember { mutableStateOf("") }
+//    var scrapLicense by remember { mutableStateOf("") }
+//    var scrapEmail by remember { mutableStateOf("") }
 //
-//    val scrollState = rememberScrollState()
-//
-//    // Error messages
+//    // Errors
 //    var passwordError by remember { mutableStateOf("") }
 //    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+//
+//    val scrollState = rememberScrollState()
 //
 //    Column(
 //        modifier = Modifier
@@ -70,32 +74,11 @@
 //        verticalArrangement = Arrangement.Top,
 //        horizontalAlignment = Alignment.CenterHorizontally
 //    ) {
-//        // Role selection
-//        Box {
-//            Button(onClick = { expanded = !expanded }) {
-//                Text("Role: ${userType.name}")
-//                Icon(
-//                    painter = painterResource(id = R.drawable.arrow_drop_down),
-//                    contentDescription = "Toggle Role",
-//                    modifier = Modifier.size(28.dp)
-//                )
-//            }
-//            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-//                UserType.values().forEach { type ->
-//                    DropdownMenuItem(
-//                        text = { Text(type.name) },
-//                        onClick = {
-//                            userType = type
-//                            expanded = false
-//                        }
-//                    )
-//                }
-//            }
-//        }
+//        Text("Sign Up as ${userType.name}", fontSize = 24.sp)
 //
 //        Spacer(modifier = Modifier.height(16.dp))
 //
-//        // Common Fields
+//        // Common fields
 //        OutlinedTextField(
 //            value = firstName,
 //            onValueChange = { firstName = it },
@@ -103,15 +86,6 @@
 //            modifier = Modifier.fillMaxWidth(),
 //            isError = fieldErrors.containsKey("firstName")
 //        )
-//        fieldErrors["firstName"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//        OutlinedTextField(
-//            value = middleName,
-//            onValueChange = { middleName = it },
-//            label = { Text("Middle Name") },
-//            modifier = Modifier.fillMaxWidth()
-//        )
-//
 //        OutlinedTextField(
 //            value = lastName,
 //            onValueChange = { lastName = it },
@@ -119,182 +93,80 @@
 //            modifier = Modifier.fillMaxWidth(),
 //            isError = fieldErrors.containsKey("lastName")
 //        )
-//        fieldErrors["lastName"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+//        OutlinedTextField(
+//            value = phone,
+//            onValueChange = { phone = it },
+//            label = { Text("Phone Number*") },
+//            modifier = Modifier.fillMaxWidth(),
+//            isError = fieldErrors.containsKey("phone")
+//        )
 //
 //        Spacer(modifier = Modifier.height(8.dp))
 //
-//        // Role-specific Fields
+//        // Role-specific fields
 //        when (userType) {
 //            UserType.RESIDENT -> {
-//                OutlinedTextField(
-//                    value = aadhar,
-//                    onValueChange = { aadhar = it },
-//                    label = { Text("Aadhar Card No*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("aadhar")
-//                )
-//                fieldErrors["aadhar"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = address,
-//                    onValueChange = { address = it },
-//                    label = { Text("Address*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("address")
-//                )
-//                fieldErrors["address"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = phone,
-//                    onValueChange = { phone = it },
-//                    label = { Text("Phone Number*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("phone")
-//                )
-//                fieldErrors["phone"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = email,
-//                    onValueChange = { email = it },
-//                    label = { Text("Email ID*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("email")
-//                )
-//                fieldErrors["email"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+//                OutlinedTextField(value = aadhar, onValueChange = { aadhar = it }, label = { Text("Aadhar No*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Address*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email*") }, modifier = Modifier.fillMaxWidth())
 //            }
-//
 //            UserType.COLLECTOR -> {
-//                OutlinedTextField(
-//                    value = vehicleNo,
-//                    onValueChange = { vehicleNo = it },
-//                    label = { Text("Vehicle Number*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("vehicleNo")
-//                )
-//                fieldErrors["vehicleNo"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = collectorId,
-//                    onValueChange = { collectorId = it },
-//                    label = { Text("Collector ID*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("collectorId")
-//                )
-//                fieldErrors["collectorId"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = phone,
-//                    onValueChange = { phone = it },
-//                    label = { Text("Phone Number*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("phone")
-//                )
-//                fieldErrors["phone"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = licenseNo,
-//                    onValueChange = { licenseNo = it },
-//                    label = { Text("License Number*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("licenseNo")
-//                )
-//                fieldErrors["licenseNo"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+//                OutlinedTextField(value = vehicleNo, onValueChange = { vehicleNo = it }, label = { Text("Vehicle No*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = collectorId, onValueChange = { collectorId = it }, label = { Text("Collector ID*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = licenseNo, onValueChange = { licenseNo = it }, label = { Text("License No*") }, modifier = Modifier.fillMaxWidth())
 //            }
-//
 //            UserType.OFFICIAL -> {
-//                OutlinedTextField(
-//                    value = govtRole,
-//                    onValueChange = { govtRole = it },
-//                    label = { Text("Role in Govt*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("govtRole")
-//                )
-//                fieldErrors["govtRole"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = govtId,
-//                    onValueChange = { govtId = it },
-//                    label = { Text("Government ID*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("govtId")
-//                )
-//                fieldErrors["govtId"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = areaLeading,
-//                    onValueChange = { areaLeading = it },
-//                    label = { Text("Area Leading*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("areaLeading")
-//                )
-//                fieldErrors["areaLeading"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = govtEmail,
-//                    onValueChange = { govtEmail = it },
-//                    label = { Text("Government Email ID*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("govtEmail")
-//                )
-//                fieldErrors["govtEmail"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-//
-//                OutlinedTextField(
-//                    value = phone,
-//                    onValueChange = { phone = it },
-//                    label = { Text("Phone Number*") },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    isError = fieldErrors.containsKey("phone")
-//                )
-//                fieldErrors["phone"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+//                OutlinedTextField(value = govtRole, onValueChange = { govtRole = it }, label = { Text("Government Role*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = govtId, onValueChange = { govtId = it }, label = { Text("Government ID*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = areaLeading, onValueChange = { areaLeading = it }, label = { Text("Area Leading*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = govtEmail, onValueChange = { govtEmail = it }, label = { Text("Government Email*") }, modifier = Modifier.fillMaxWidth())
+//            }
+//            UserType.SCRAP_BUYER -> {
+//                OutlinedTextField(value = businessName, onValueChange = { businessName = it }, label = { Text("Business Name*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = scrapLicense, onValueChange = { scrapLicense = it }, label = { Text("Scrap License No*") }, modifier = Modifier.fillMaxWidth())
+//                OutlinedTextField(value = scrapEmail, onValueChange = { scrapEmail = it }, label = { Text("Business Email*") }, modifier = Modifier.fillMaxWidth())
 //            }
 //        }
 //
 //        Spacer(modifier = Modifier.height(8.dp))
 //
-//        // Password
+//        // Password + Confirm Password
 //        OutlinedTextField(
 //            value = password,
 //            onValueChange = {
 //                password = it
-//                passwordError = if (confirmPassword.isNotEmpty() && confirmPassword != password) {
-//                    "Passwords do not match"
-//                } else ""
+//                if (confirmPassword.isNotEmpty() && confirmPassword != password) {
+//                    passwordError = "Passwords do not match"
+//                } else passwordError = ""
 //            },
 //            label = { Text("Password*") },
 //            modifier = Modifier.fillMaxWidth(),
-//            isError = fieldErrors.containsKey("password"),
 //            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
 //            trailingIcon = {
 //                IconButton(onClick = { passwordVisible = !passwordVisible }) {
 //                    Icon(
 //                        painter = painterResource(id = if (passwordVisible) R.drawable.visibility else R.drawable.visibility_off),
-//                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
-//                        modifier = Modifier.size(28.dp)
+//                        contentDescription = null
 //                    )
 //                }
 //            }
 //        )
-//        fieldErrors["password"]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 //
-//        // Confirm Password
 //        OutlinedTextField(
 //            value = confirmPassword,
 //            onValueChange = {
 //                confirmPassword = it
-//                passwordError = if (confirmPassword != password && confirmPassword.isNotEmpty()) {
-//                    "Passwords do not match"
-//                } else ""
+//                if (confirmPassword != password) passwordError = "Passwords do not match"
+//                else passwordError = ""
 //            },
 //            label = { Text("Confirm Password*") },
 //            modifier = Modifier.fillMaxWidth(),
-//            isError = passwordError.isNotEmpty(),
 //            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
 //            trailingIcon = {
 //                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
 //                    Icon(
 //                        painter = painterResource(id = if (confirmPasswordVisible) R.drawable.visibility else R.drawable.visibility_off),
-//                        contentDescription = if (confirmPasswordVisible) "Hide confirm password" else "Show confirm password",
-//                        modifier = Modifier.size(28.dp)
+//                        contentDescription = null
 //                    )
 //                }
 //            }
@@ -305,50 +177,12 @@
 //
 //        Spacer(modifier = Modifier.height(16.dp))
 //
-//        // Submit
 //        Button(
 //            onClick = {
-//                val errors = mutableMapOf<String, String>()
-//                passwordError = ""
-//
-//                // Validate required fields
-//                if (firstName.isBlank()) errors["firstName"] = "First name is required"
-//                if (lastName.isBlank()) errors["lastName"] = "Last name is required"
-//                if (phone.isBlank()) errors["phone"] = "Phone number is required"
-//                if (password.isBlank()) errors["password"] = "Password is required"
-//                if (confirmPassword.isBlank()) passwordError = "Please confirm your password"
-//                if (password != confirmPassword) passwordError = "Passwords do not match"
-//
-//                when (userType) {
-//                    UserType.RESIDENT -> {
-//                        if (aadhar.isBlank()) errors["aadhar"] = "Aadhar number is required"
-//                        if (address.isBlank()) errors["address"] = "Address is required"
-//                        if (email.isBlank()) errors["email"] = "Email is required"
-//                    }
-//                    UserType.COLLECTOR -> {
-//                        if (vehicleNo.isBlank()) errors["vehicleNo"] = "Vehicle number is required"
-//                        if (collectorId.isBlank()) errors["collectorId"] = "Collector ID is required"
-//                        if (licenseNo.isBlank()) errors["licenseNo"] = "License number is required"
-//                    }
-//                    UserType.OFFICIAL -> {
-//                        if (govtRole.isBlank()) errors["govtRole"] = "Government role is required"
-//                        if (govtId.isBlank()) errors["govtId"] = "Government ID is required"
-//                        if (areaLeading.isBlank()) errors["areaLeading"] = "Area leading is required"
-//                        if (govtEmail.isBlank()) errors["govtEmail"] = "Government email is required"
-//                    }
-//                }
-//
-//                fieldErrors = errors
-//
-//                // ❌ If there are errors, don't submit, just show them in red
-//                if (errors.isNotEmpty() || passwordError.isNotEmpty()) {
-//                    return@Button
-//                }
-//
-//                // ✅ If no errors, proceed with Firebase signup
 //                val signupEmail = when (userType) {
 //                    UserType.COLLECTOR -> "$collectorId@collectors.regenx.com"
 //                    UserType.OFFICIAL -> govtEmail
+//                    UserType.SCRAP_BUYER -> scrapEmail
 //                    else -> email
 //                }
 //
@@ -358,7 +192,6 @@
 //                            val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
 //                            val userData = hashMapOf(
 //                                "firstName" to firstName,
-//                                "middleName" to middleName,
 //                                "lastName" to lastName,
 //                                "phone" to phone,
 //                                "role" to userType.name,
@@ -381,6 +214,10 @@
 //                                    userData["areaLeading"] = areaLeading
 //                                    userData["govtEmail"] = govtEmail
 //                                }
+//                                UserType.SCRAP_BUYER -> {
+//                                    userData["businessName"] = businessName
+//                                    userData["scrapLicense"] = scrapLicense
+//                                }
 //                            }
 //
 //                            firestore.collection("users").document(uid).set(userData)
@@ -390,7 +227,6 @@
 //                                .addOnFailureListener { e ->
 //                                    passwordError = "Error saving user: ${e.message}"
 //                                }
-//
 //                        } else {
 //                            passwordError = task.exception?.localizedMessage ?: "Signup failed"
 //                        }
@@ -406,20 +242,13 @@
 //        ClickableText(
 //            text = AnnotatedString("Already have an account? Login"),
 //            style = LocalTextStyle.current.copy(
-//                fontSize = 18.sp, // Bigger text
+//                fontSize = 18.sp,
 //                color = MaterialTheme.colorScheme.primary
 //            ),
-//            onClick = {
-//                navController.navigate("login/${userType.name}")
-//            }
+//            onClick = { navController.navigate("login/${userType.name}") }
 //        )
-//
-//        Spacer(modifier = Modifier.height(24.dp))
 //    }
 //}
-
-
-
 
 
 
@@ -433,6 +262,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext // Needed for Context
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -445,6 +275,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import com.example.regenx.utils.geocodeAndCreateResidentEntry // 🌟 ADDED: Geocoding Import 🌟
 
 // ✅ Added SCRAP_BUYER role
 enum class UserType { RESIDENT, COLLECTOR, OFFICIAL, SCRAP_BUYER }
@@ -453,6 +284,7 @@ enum class UserType { RESIDENT, COLLECTOR, OFFICIAL, SCRAP_BUYER }
 fun SignupScreen(navController: NavController, role: String) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
+    val context = LocalContext.current // 🌟 ADDED: Context for Geocoding 🌟
 
     var userType by remember { mutableStateOf(UserType.valueOf(role)) }
 
@@ -481,14 +313,14 @@ fun SignupScreen(navController: NavController, role: String) {
     var areaLeading by remember { mutableStateOf("") }
     var govtEmail by remember { mutableStateOf("") }
 
-    // Scrap Buyer (✅ New role)
+    // Scrap Buyer
     var businessName by remember { mutableStateOf("") }
     var scrapLicense by remember { mutableStateOf("") }
     var scrapEmail by remember { mutableStateOf("") }
 
     // Errors
     var passwordError by remember { mutableStateOf("") }
-    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) } // Field errors unused but kept
 
     val scrollState = rememberScrollState()
 
@@ -606,6 +438,13 @@ fun SignupScreen(navController: NavController, role: String) {
 
         Button(
             onClick = {
+                // 1. Basic validation (optional: add more comprehensive checks)
+                if (password.length < 6 || password != confirmPassword) {
+                    passwordError = "Password must be 6+ chars and match."
+                    return@Button
+                }
+
+                // 2. Determine final sign-up email based on role
                 val signupEmail = when (userType) {
                     UserType.COLLECTOR -> "$collectorId@collectors.regenx.com"
                     UserType.OFFICIAL -> govtEmail
@@ -613,10 +452,17 @@ fun SignupScreen(navController: NavController, role: String) {
                     else -> email
                 }
 
+                // 3. Create user in Firebase Auth
                 auth.createUserWithEmailAndPassword(signupEmail, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+                            val uid = auth.currentUser?.uid
+                            if (uid == null) {
+                                passwordError = "User created but UID not found."
+                                return@addOnCompleteListener
+                            }
+
+                            // 4. Prepare common user data
                             val userData = hashMapOf(
                                 "firstName" to firstName,
                                 "lastName" to lastName,
@@ -625,10 +471,11 @@ fun SignupScreen(navController: NavController, role: String) {
                                 "email" to signupEmail
                             )
 
+                            // 5. Add role-specific data
                             when (userType) {
                                 UserType.RESIDENT -> {
                                     userData["aadhar"] = aadhar
-                                    userData["address"] = address
+                                    userData["address"] = address // Address is saved here first
                                 }
                                 UserType.COLLECTOR -> {
                                     userData["vehicleNo"] = vehicleNo
@@ -647,12 +494,20 @@ fun SignupScreen(navController: NavController, role: String) {
                                 }
                             }
 
+                            // 6. Save user data to 'users' collection
                             firestore.collection("users").document(uid).set(userData)
                                 .addOnSuccessListener {
+                                    // 7. 🌟 GEOCoding for RESIDENTS 🌟
+                                    if (userType == UserType.RESIDENT) {
+                                        // This creates the separate 'residents' document with lat/lng/token
+                                        geocodeAndCreateResidentEntry(context, uid)
+                                    }
+
+                                    // 8. Navigate to login screen
                                     navController.navigate("login/${userType.name}")
                                 }
                                 .addOnFailureListener { e ->
-                                    passwordError = "Error saving user: ${e.message}"
+                                    passwordError = "Error saving user data: ${e.message}"
                                 }
                         } else {
                             passwordError = task.exception?.localizedMessage ?: "Signup failed"
@@ -674,5 +529,7 @@ fun SignupScreen(navController: NavController, role: String) {
             ),
             onClick = { navController.navigate("login/${userType.name}") }
         )
+
+        Spacer(modifier = Modifier.height(80.dp)) // Add padding at bottom for scrolling
     }
 }
