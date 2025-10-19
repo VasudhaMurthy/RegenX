@@ -1,9 +1,13 @@
-package com.example.regenx.screens.shared
+package com.example.regenx.screens.collectors
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,43 +18,39 @@ import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun CollectorSettingsScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text("Collector Settings") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
-    ) { innerPadding ->
+    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(padding)
                 .padding(24.dp)
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            SettingOption("Edit Profile", Icons.Default.Edit) {
-                // TODO: Navigate to Edit Profile Screen
+            SettingOption("Truck Assignments", Icons.Filled.LocalShipping) {
+                // TODO: navigate to truck assignments
             }
-            SettingOption("Authentication Settings", Icons.Default.Lock) {
-                // TODO: Navigate to Auth Settings
+            SettingOption("Work Schedule", Icons.Filled.Schedule) {
+                // TODO: navigate to schedule screen
             }
-            SettingOption("Language Preference", Icons.Default.Language) {
-                // TODO: Show language switch
+            SettingOption("Change Password", Icons.Filled.Lock) {
+                // TODO: navigate to change password
             }
-            SettingOption("Help & Support", Icons.Default.HelpOutline) {
-                // TODO: Navigate or show contact info
-            }
-            SettingOption("Logout", Icons.Default.ExitToApp) {
+            SettingOption("Logout", Icons.Filled.ExitToApp) {
                 FirebaseAuth.getInstance().signOut()
-                // After logout, navigate back to splash so it will redirect to login
                 navController.navigate("splash") {
-                    popUpTo(0) // clears backstack so user can't go back without logging in
+                    popUpTo(0)
                 }
             }
         }
@@ -58,7 +58,7 @@ fun SettingsScreen(navController: NavController) {
 }
 
 @Composable
-fun SettingOption(
+private fun SettingOption(
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit

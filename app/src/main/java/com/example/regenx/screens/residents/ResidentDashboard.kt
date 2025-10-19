@@ -112,7 +112,7 @@ fun ResidentDashboard(navController: NavController) {
                     contentDescription = "Settings",
                     modifier = Modifier
                         .size(28.dp)
-                        .clickable { navController.navigate("settings") }
+                        .clickable { navController.navigate("resident_settings") }
                 )
             }
 

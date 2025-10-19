@@ -114,7 +114,7 @@ fun OfficialDashboard(navController: NavController) {
                             .clickable { navController.navigate("profileScreen") }
                             .padding(end = 8.dp)
                     )
-                    IconButton(onClick = { navController.navigate("settings") }) {
+                    IconButton(onClick = { navController.navigate("official_settings") }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Settings"
