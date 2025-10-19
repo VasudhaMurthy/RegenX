@@ -22,6 +22,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String",
+            "GEMINI_API_KEY",
+            // The fallback should be a string containing a double quote,
+            // which is why we use an inner \" instead of just ""
+            "\"${project.findProperty("GEMINI_API_KEY") ?: "UNDEFINED"}\""
+        )
     }
 
     buildTypes {
@@ -46,6 +53,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -127,4 +135,7 @@ dependencies {
 
     implementation("com.google.firebase:firebase-storage-ktx:21.0.1")
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
 }

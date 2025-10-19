@@ -11,9 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.regenx.BuildConfig
+//import com.google.ai.client.generativeai.BuildConfig
+import com.google.ai.client.generativeai.GenerativeModel
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,17 +27,18 @@ import java.util.*
 fun ComplaintDetailsScreen(navController: NavController, complaintId: String) {
     val firestore = Firebase.firestore
     var complaint by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var aiSuggestion by remember { mutableStateOf<String?>(null) }
+    var isLoadingSuggestion by remember { mutableStateOf(false) }
 
-    // ✅ Use DisposableEffect to manage Firestore listener lifecycle
+    // ✅ Listen for complaint data
     DisposableEffect(complaintId) {
-        val listener: ListenerRegistration = firestore.collection("complaints").document(complaintId)
-            .addSnapshotListener { doc, _ ->
-                complaint = doc?.data
-            }
+        val listener: ListenerRegistration =
+            firestore.collection("complaints").document(complaintId)
+                .addSnapshotListener { doc, _ ->
+                    complaint = doc?.data
+                }
 
-        onDispose {
-            listener.remove()
-        }
+        onDispose { listener.remove() }
     }
 
     Scaffold(
@@ -61,6 +67,35 @@ fun ComplaintDetailsScreen(navController: NavController, complaintId: String) {
             var localStatus by remember { mutableStateOf(status) }
             LaunchedEffect(status) { localStatus = status }
 
+            // 🧠 Generate AI suggestion
+            LaunchedEffect(description) {
+                if (description.isNotEmpty()) {
+                    isLoadingSuggestion = true
+                    aiSuggestion = withContext(Dispatchers.IO) {
+                        try {
+                            val model = GenerativeModel(
+                                modelName = "gemini-2.5-flash",
+                                apiKey = BuildConfig.GEMINI_API_KEY
+                            )
+
+                            val prompt = """
+                                You are an AI assistant for a smart municipal waste management app.
+                                Analyze the following complaint and suggest what action should be taken by officials.
+                                Keep it short and professional.
+                                
+                                Complaint: "$description"
+                            """.trimIndent()
+
+                            val response = model.generateContent(prompt)
+                            response.text ?: "No suggestion available"
+                        } catch (e: Exception) {
+                            e.localizedMessage ?: "Error generating suggestion"
+                        }
+                    }
+                    isLoadingSuggestion = false
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .padding(padding)
@@ -85,6 +120,21 @@ fun ComplaintDetailsScreen(navController: NavController, complaintId: String) {
                             .height(240.dp)
                             .padding(8.dp)
                     )
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // 🔹 AI Suggestion Section
+                if (isLoadingSuggestion) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(8.dp))
+                    Text("Analyzing complaint with AI...")
+                } else if (aiSuggestion != null) {
+                    Text(
+                        "🧠 AI Suggested Action:",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(aiSuggestion!!, modifier = Modifier.padding(8.dp))
                 }
 
                 Spacer(Modifier.height(24.dp))
