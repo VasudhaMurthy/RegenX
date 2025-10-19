@@ -44,6 +44,7 @@
         <!-- Collector location tracking -->
         <service
             android:name=".backend.CollectorLocationService"
+            android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
 

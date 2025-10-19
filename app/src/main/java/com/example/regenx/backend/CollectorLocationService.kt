@@ -24,7 +24,8 @@ class CollectorLocationService : Service() {
     private val firestore = FirebaseFirestore.getInstance()
 
     // Unique document ID in Firestore for this collector
-    private val collectorId = "truck_01"  // Adjust as needed
+//    private val collectorId = "truck_01"  // Adjust as needed
+    private val collectorId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: "unknown_collector"
 
     override fun onCreate() {
         super.onCreate()
