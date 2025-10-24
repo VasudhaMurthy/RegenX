@@ -418,9 +418,9 @@ fun OfficialDashboard(navController: NavController) {
                 FeatureCard(
                     title = "Manage Fleet & Routes",
                     description = "Monitor live locations and optimize collection routes.",
-                    iconId = R.drawable.ic_launcher_foreground, // Using existing placeholder R.drawable.ic_launcher_foreground
+                    iconId = R.drawable.ic_launcher_foreground, // Placeholder
                     gradientColors = listOf(Color(0xFF90CAF9), Color(0xFF42A5F5)),
-                    onClick = { /* TODO: Navigate to Fleet Management Screen */ }
+                    onClick = { navController.navigate("fleetManagement") } // 🌟 UPDATED 🌟
                 )
             }
 

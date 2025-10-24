@@ -10,6 +10,8 @@ import com.example.regenx.screens.collectors.PostWasteScreen
 import com.example.regenx.screens.collectors.scrapCollectors.NearbyPickupRequestsScreen
 import com.example.regenx.screens.collectors.scrapCollectors.ScrapCollectorDashboard
 import com.example.regenx.screens.officials.ComplaintDetailsScreen
+import com.example.regenx.screens.officials.ComplaintStatisticsScreen // 🌟 ADDED IMPORT 🌟
+import com.example.regenx.screens.officials.FleetManagementScreen
 import com.example.regenx.screens.officials.OfficialDashboard
 import com.example.regenx.screens.officials.OfficialSettingsScreen
 import com.example.regenx.screens.officials.ViewComplaintsScreen
@@ -59,6 +61,7 @@ fun AppNavGraph() {
         // 🔹 Official Routes
         composable("officialDashboard") { OfficialDashboard(navController) }
         composable("official_settings") { OfficialSettingsScreen(navController) }
+        composable("fleetManagement") { FleetManagementScreen(navController) }
 
         // 🔹 Complaint Management
         composable("complaint/{role}") { backStackEntry ->
@@ -72,6 +75,9 @@ fun AppNavGraph() {
         }
 
         composable("viewComplaints") { ViewComplaintsScreen(navController) }
+
+        // 🌟 ADDED ROUTE FOR STATISTICS 🌟
+        composable("complaintStatistics") { ComplaintStatisticsScreen(navController) }
 
         // 🔹 Shared Profile / Utilities
         composable("profileScreen") { ProfileScreen(navController) }

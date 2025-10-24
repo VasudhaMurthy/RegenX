@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme // 🌟 Import MaterialTheme 🌟
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,6 +19,13 @@ fun RoleButton(
     selectedRole: String?,
     onClick: () -> Unit
 ) {
+    // Determine the button color based on selection status
+    val buttonColor = if (selectedRole == role) {
+        Color(0xFF2E7D32) // Darker Green for selected state
+    } else {
+        Color(0xFF388E3C) // Default Green for unselected state
+    }
+
     Button(
         onClick = onClick,
         modifier = Modifier
@@ -25,9 +33,13 @@ fun RoleButton(
             .height(50.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (selectedRole == role) Color(0xFF2E7D32) else Color(0xFF388E3C)
+            containerColor = buttonColor,
+            // 🌟 Use the theme's onPrimary color for the content (text) 🌟
+            // This defaults to Color.White in your theme, but is more compliant.
+            contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
-        Text(role, fontSize = 18.sp, color = Color.White)
+        // Use the contentColor defined in ButtonDefaults, which is set to onPrimary above.
+        Text(role, fontSize = 18.sp)
     }
 }

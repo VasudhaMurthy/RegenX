@@ -34,7 +34,9 @@ fun OfficialSettingsScreen(navController: NavController) {
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            SettingOption("View Complaint Statistics", Icons.Default.BarChart) { /* Navigate */ }
+            SettingOption("View Complaint Statistics", Icons.Default.BarChart) {
+                navController.navigate("complaintStatistics")
+            }
             SettingOption("Notification Settings", Icons.Default.Notifications) { /* Navigate */ }
             SettingOption("Change Password", Icons.Default.Lock) { /* Navigate */ }
             SettingOption("Logout", Icons.Default.ExitToApp) {
