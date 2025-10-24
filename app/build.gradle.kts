@@ -138,4 +138,8 @@ dependencies {
 
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
+    // In build.gradle (app module)
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+// Or your current version
+
 }
