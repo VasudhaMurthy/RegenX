@@ -29,6 +29,7 @@ firebaseMessagingKtx = "24.1.1"
 recyclerview = "1.4.0"
 uiText = "1.8.3"
 foundation = "1.8.3"
+firebaseFunctionsKtx = "22.1.0"
 
 [libraries]
 androidx-activity-compose-v181 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -71,6 +72,7 @@ firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messa
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
