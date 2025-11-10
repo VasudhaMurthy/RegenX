@@ -6,6 +6,7 @@
 //import androidx.compose.runtime.*
 //import androidx.compose.ui.Alignment
 //import androidx.compose.ui.Modifier
+//import androidx.compose.ui.platform.LocalContext // Needed for Context
 //import androidx.compose.ui.res.painterResource
 //import androidx.compose.ui.text.AnnotatedString
 //import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -18,6 +19,7 @@
 //import com.google.firebase.firestore.FirebaseFirestore
 //import androidx.compose.foundation.rememberScrollState
 //import androidx.compose.foundation.verticalScroll
+//import com.example.regenx.utils.geocodeAndCreateResidentEntry // 🌟 ADDED: Geocoding Import 🌟
 //
 //// ✅ Added SCRAP_BUYER role
 //enum class UserType { RESIDENT, COLLECTOR, OFFICIAL, SCRAP_BUYER }
@@ -26,6 +28,7 @@
 //fun SignupScreen(navController: NavController, role: String) {
 //    val auth = FirebaseAuth.getInstance()
 //    val firestore = FirebaseFirestore.getInstance()
+//    val context = LocalContext.current // 🌟 ADDED: Context for Geocoding 🌟
 //
 //    var userType by remember { mutableStateOf(UserType.valueOf(role)) }
 //
@@ -54,14 +57,14 @@
 //    var areaLeading by remember { mutableStateOf("") }
 //    var govtEmail by remember { mutableStateOf("") }
 //
-//    // Scrap Buyer (✅ New role)
+//    // Scrap Buyer
 //    var businessName by remember { mutableStateOf("") }
 //    var scrapLicense by remember { mutableStateOf("") }
 //    var scrapEmail by remember { mutableStateOf("") }
 //
 //    // Errors
 //    var passwordError by remember { mutableStateOf("") }
-//    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+//    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) } // Field errors unused but kept
 //
 //    val scrollState = rememberScrollState()
 //
@@ -179,6 +182,13 @@
 //
 //        Button(
 //            onClick = {
+//                // 1. Basic validation (optional: add more comprehensive checks)
+//                if (password.length < 6 || password != confirmPassword) {
+//                    passwordError = "Password must be 6+ chars and match."
+//                    return@Button
+//                }
+//
+//                // 2. Determine final sign-up email based on role
 //                val signupEmail = when (userType) {
 //                    UserType.COLLECTOR -> "$collectorId@collectors.regenx.com"
 //                    UserType.OFFICIAL -> govtEmail
@@ -186,10 +196,17 @@
 //                    else -> email
 //                }
 //
+//                // 3. Create user in Firebase Auth
 //                auth.createUserWithEmailAndPassword(signupEmail, password)
 //                    .addOnCompleteListener { task ->
 //                        if (task.isSuccessful) {
-//                            val uid = auth.currentUser?.uid ?: return@addOnCompleteListener
+//                            val uid = auth.currentUser?.uid
+//                            if (uid == null) {
+//                                passwordError = "User created but UID not found."
+//                                return@addOnCompleteListener
+//                            }
+//
+//                            // 4. Prepare common user data
 //                            val userData = hashMapOf(
 //                                "firstName" to firstName,
 //                                "lastName" to lastName,
@@ -198,10 +215,11 @@
 //                                "email" to signupEmail
 //                            )
 //
+//                            // 5. Add role-specific data
 //                            when (userType) {
 //                                UserType.RESIDENT -> {
 //                                    userData["aadhar"] = aadhar
-//                                    userData["address"] = address
+//                                    userData["address"] = address // Address is saved here first
 //                                }
 //                                UserType.COLLECTOR -> {
 //                                    userData["vehicleNo"] = vehicleNo
@@ -220,12 +238,20 @@
 //                                }
 //                            }
 //
+//                            // 6. Save user data to 'users' collection
 //                            firestore.collection("users").document(uid).set(userData)
 //                                .addOnSuccessListener {
+//                                    // 7. 🌟 GEOCoding for RESIDENTS 🌟
+//                                    if (userType == UserType.RESIDENT) {
+//                                        // This creates the separate 'residents' document with lat/lng/token
+//                                        geocodeAndCreateResidentEntry(context, uid)
+//                                    }
+//
+//                                    // 8. Navigate to login screen
 //                                    navController.navigate("login/${userType.name}")
 //                                }
 //                                .addOnFailureListener { e ->
-//                                    passwordError = "Error saving user: ${e.message}"
+//                                    passwordError = "Error saving user data: ${e.message}"
 //                                }
 //                        } else {
 //                            passwordError = task.exception?.localizedMessage ?: "Signup failed"
@@ -247,8 +273,11 @@
 //            ),
 //            onClick = { navController.navigate("login/${userType.name}") }
 //        )
+//
+//        Spacer(modifier = Modifier.height(80.dp)) // Add padding at bottom for scrolling
 //    }
 //}
+
 
 
 
@@ -275,7 +304,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.example.regenx.utils.geocodeAndCreateResidentEntry // 🌟 ADDED: Geocoding Import 🌟
+import com.example.regenx.utils.geocodeAndCreateResidentEntry // Geocoding Import
 
 // ✅ Added SCRAP_BUYER role
 enum class UserType { RESIDENT, COLLECTOR, OFFICIAL, SCRAP_BUYER }
@@ -284,7 +313,7 @@ enum class UserType { RESIDENT, COLLECTOR, OFFICIAL, SCRAP_BUYER }
 fun SignupScreen(navController: NavController, role: String) {
     val auth = FirebaseAuth.getInstance()
     val firestore = FirebaseFirestore.getInstance()
-    val context = LocalContext.current // 🌟 ADDED: Context for Geocoding 🌟
+    val context = LocalContext.current // Context for Geocoding
 
     var userType by remember { mutableStateOf(UserType.valueOf(role)) }
 
@@ -320,7 +349,7 @@ fun SignupScreen(navController: NavController, role: String) {
 
     // Errors
     var passwordError by remember { mutableStateOf("") }
-    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) } // Field errors unused but kept
+    var fieldErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     val scrollState = rememberScrollState()
 
@@ -438,7 +467,7 @@ fun SignupScreen(navController: NavController, role: String) {
 
         Button(
             onClick = {
-                // 1. Basic validation (optional: add more comprehensive checks)
+                // 1. Basic validation
                 if (password.length < 6 || password != confirmPassword) {
                     passwordError = "Password must be 6+ chars and match."
                     return@Button
@@ -494,19 +523,29 @@ fun SignupScreen(navController: NavController, role: String) {
                                 }
                             }
 
-                            // 6. Save user data to 'users' collection
-                            firestore.collection("users").document(uid).set(userData)
+                            // 6. 🎯 DETERMINE COLLECTION NAME FOR SEPARATE STORAGE 🎯
+                            val collectionName = when (userType) {
+                                UserType.RESIDENT -> "residents"
+                                UserType.COLLECTOR -> "collectors"
+                                UserType.OFFICIAL -> "officials"
+                                UserType.SCRAP_BUYER -> "scrap_buyers"
+                            }
+
+                            // 7. 💾 SAVE USER DATA TO THE ROLE-SPECIFIC COLLECTION 💾
+                            firestore.collection(collectionName).document(uid).set(userData)
                                 .addOnSuccessListener {
-                                    // 7. 🌟 GEOCoding for RESIDENTS 🌟
+                                    // 8. 🌟 GEOCoding for RESIDENTS 🌟 (Only needed for Resident)
                                     if (userType == UserType.RESIDENT) {
                                         // This creates the separate 'residents' document with lat/lng/token
                                         geocodeAndCreateResidentEntry(context, uid)
                                     }
 
-                                    // 8. Navigate to login screen
+                                    // 9. Navigate to login screen
                                     navController.navigate("login/${userType.name}")
                                 }
                                 .addOnFailureListener { e ->
+                                    // ⚠️ CRITICAL: Delete the Auth user if Firestore save fails
+                                    auth.currentUser?.delete()
                                     passwordError = "Error saving user data: ${e.message}"
                                 }
                         } else {

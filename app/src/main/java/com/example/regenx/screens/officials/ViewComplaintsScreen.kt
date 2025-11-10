@@ -1,107 +1,3 @@
-//package com.example.regenx.screens.officials
-//
-//import androidx.compose.foundation.clickable
-//import androidx.compose.foundation.layout.*
-//import androidx.compose.foundation.lazy.LazyColumn
-//import androidx.compose.foundation.lazy.items
-//import androidx.compose.material3.*
-//import androidx.compose.runtime.*
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.unit.dp
-//import androidx.navigation.NavController
-//import com.google.firebase.firestore.ktx.firestore
-//import com.google.firebase.ktx.Firebase
-//import java.text.SimpleDateFormat
-//import java.util.*
-//
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun ViewComplaintsScreen(navController: NavController) {
-//    val firestore = Firebase.firestore
-//    var residentComplaints by remember { mutableStateOf(listOf<Pair<String, Map<String, Any>>>()) }
-//    var collectorComplaints by remember { mutableStateOf(listOf<Pair<String, Map<String, Any>>>()) }
-//
-//    LaunchedEffect(Unit) {
-//        firestore.collection("complaints").get()
-//            .addOnSuccessListener { snapshot ->
-//                val all = snapshot.documents.mapNotNull { doc ->
-//                    val data = doc.data
-//                    if (data != null) doc.id to data else null
-//                }
-//                residentComplaints = all.filter { it.second["userType"] == "resident" }
-//                collectorComplaints = all.filter { it.second["userType"] == "collector" }
-//            }
-//    }
-//
-//    Scaffold(
-//        topBar = { TopAppBar(title = { Text("All Complaints") }) }
-//    ) { padding ->
-//        LazyColumn(
-//            modifier = Modifier
-//                .padding(padding)
-//                .padding(16.dp)
-//        ) {
-//            item {
-//                Text("Resident Complaints", style = MaterialTheme.typography.titleMedium)
-//                Spacer(Modifier.height(8.dp))
-//            }
-//
-//            if (residentComplaints.isEmpty()) {
-//                item { Text("No resident complaints") }
-//            } else {
-//                items(residentComplaints) { (id, comp) ->
-//                    ComplaintItem(id, comp) {
-//                        navController.navigate("complaintDetails/$id")
-//                    }
-//                }
-//            }
-//
-//            item {
-//                Spacer(Modifier.height(24.dp))
-//                Text("Collector Complaints", style = MaterialTheme.typography.titleMedium)
-//                Spacer(Modifier.height(8.dp))
-//            }
-//
-//            if (collectorComplaints.isEmpty()) {
-//                item { Text("No collector complaints") }
-//            } else {
-//                items(collectorComplaints) { (id, comp) ->
-//                    ComplaintItem(id, comp) {
-//                        navController.navigate("complaintDetails/$id")
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Composable
-//fun ComplaintItem(
-//    id: String,
-//    complaint: Map<String, Any>,
-//    onClick: () -> Unit
-//) {
-//    val subject = complaint["subject"] as? String ?: "No subject"
-//    val timestamp = complaint["timestamp"] as? Long ?: 0L
-//    val date = if (timestamp > 0)
-//        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(timestamp))
-//    else "Unknown date"
-//
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .padding(vertical = 6.dp)
-//            .clickable { onClick() },
-//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-//    ) {
-//        Column(Modifier.padding(16.dp)) {
-//            Text(subject, style = MaterialTheme.typography.titleMedium)
-//            Spacer(Modifier.height(4.dp))
-//            Text(date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-//        }
-//    }
-//}
-
 package com.example.regenx.screens.officials
 
 import androidx.compose.foundation.clickable
@@ -114,8 +10,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color // Needed for Color(0xFFE8F5E9)
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
@@ -132,17 +31,31 @@ fun ViewComplaintsScreen(navController: NavController) {
     var collectorComplaints by remember { mutableStateOf(listOf<Pair<String, Map<String, Any>>>()) }
     var selectedTab by remember { mutableStateOf(ComplaintTab.RESIDENT) } // State for tab selection
 
-    // Data Loading Logic (remains the same)
-    LaunchedEffect(Unit) {
-        firestore.collection("complaints").get()
-            .addOnSuccessListener { snapshot ->
-                val all = snapshot.documents.mapNotNull { doc ->
-                    val data = doc.data
-                    if (data != null) doc.id to data else null
+    // 🌟 FIX: Use addSnapshotListener for real-time updates and correct filtering 🌟
+    DisposableEffect(Unit) {
+        val listener: ListenerRegistration = firestore.collection("complaints")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    // Handle error logging here
+                    return@addSnapshotListener
                 }
-                residentComplaints = all.filter { it.second["userType"] == "resident" }
-                collectorComplaints = all.filter { it.second["userType"] == "collector" }
+
+                if (snapshot != null) {
+                    val all = snapshot.documents.mapNotNull { doc ->
+                        val data = doc.data
+                        if (data != null) doc.id to data else null
+                    }
+
+                    // 🌟 FIX: Filter based on the 'role' field, ensuring it matches RESIDENT/COLLECTOR 🌟
+                    residentComplaints = all.filter {
+                        (it.second["role"] as? String)?.uppercase() == "RESIDENT"
+                    }
+                    collectorComplaints = all.filter {
+                        (it.second["role"] as? String)?.uppercase() == "COLLECTOR"
+                    }
+                }
             }
+        onDispose { listener.remove() }
     }
 
     Scaffold(
@@ -238,7 +151,8 @@ fun ComplaintList(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No $title found.")
+                    // Check if the overall list is empty or just the filtered one
+                    Text("No ${title.lowercase()} found.")
                 }
             }
         } else {
@@ -259,6 +173,7 @@ fun ComplaintItem(
 ) {
     val subject = complaint["subject"] as? String ?: "No subject"
     val timestamp = complaint["timestamp"] as? Long ?: 0L
+    val status = complaint["status"] as? String ?: "pending" // Get status
     val date = if (timestamp > 0)
         SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(timestamp))
     else "Unknown date"
@@ -268,10 +183,23 @@ fun ComplaintItem(
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        // Visual cue for status
+        colors = CardDefaults.cardColors(
+            containerColor = if (status == "resolved") Color(0xFFE8F5E9) else MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(subject, style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text(subject, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                // Display status next to the subject
+                Text(
+                    text = status.uppercase(),
+                    style = MaterialTheme.typography.bodySmall,
+                    // 🌟 FIX: Use MaterialTheme.colorScheme.error 🌟
+                    color = if (status == "resolved") Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = date,

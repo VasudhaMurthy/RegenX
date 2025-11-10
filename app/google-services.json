@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "942086189752",
-    "project_id": "regenx-64f99",
-    "storage_bucket": "regenx-64f99.firebasestorage.app"
+    "project_number": "532308756001",
+    "project_id": "regenx-18",
+    "storage_bucket": "regenx-18.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:942086189752:android:893e40241e03455c577a4d",
+        "mobilesdk_app_id": "1:532308756001:android:6f3486f21f1b2ef9808560",
         "android_client_info": {
           "package_name": "com.example.regenx"
         }
@@ -24,7 +24,7 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDnnJgMDqbN5fFusTECUJR4OX8IXoEKeZU"
+          "current_key": "AIzaSyBZ8yAFmfPTBJKhuaZZvwQJPVi2hH5OT_E"
         }
       ],
       "services": {

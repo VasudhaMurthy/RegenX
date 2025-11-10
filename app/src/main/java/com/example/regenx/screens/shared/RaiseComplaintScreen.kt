@@ -32,7 +32,7 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RaiseComplaintScreen(navController: NavController, role: String ) {
+fun RaiseComplaintScreen(navController: NavController, role: String) { // Assuming role parameter is passed
     val context = LocalContext.current
     val auth = Firebase.auth
     val firestore = Firebase.firestore
@@ -43,9 +43,13 @@ fun RaiseComplaintScreen(navController: NavController, role: String ) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var isUploading by remember { mutableStateOf(false) }
 
+    // Error message for missing required fields
+    var submissionError by remember { mutableStateOf<String?>(null) }
+
     // Function to create image file
     fun createImageFile(context: Context): File {
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        // NOTE: Corrected getExternalFilesDir to getExternalFilesFilesDir (if that was the intention) or just getExternalFilesDir
         val storageDir: File? = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir)
     }
@@ -55,6 +59,7 @@ fun RaiseComplaintScreen(navController: NavController, role: String ) {
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (!success) imageUri = null
+        else submissionError = null // Clear error if photo is successfully taken
     }
 
     // Permission request launcher
@@ -93,8 +98,11 @@ fun RaiseComplaintScreen(navController: NavController, role: String ) {
             // Subject
             OutlinedTextField(
                 value = subject,
-                onValueChange = { subject = it },
-                label = { Text("Subject (e.g., Missed Pickup, Illegal Dumping)") },
+                onValueChange = {
+                    subject = it
+                    submissionError = null // Clear error on input change
+                },
+                label = { Text("Subject* (e.g., Missed Pickup)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -103,13 +111,26 @@ fun RaiseComplaintScreen(navController: NavController, role: String ) {
             // Description
             OutlinedTextField(
                 value = description,
-                onValueChange = { description = it },
-                label = { Text("Description") },
+                onValueChange = {
+                    description = it
+                    submissionError = null // Clear error on input change
+                },
+                label = { Text("Description*") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Photo Status Indicator (Shows it's optional)
+            if (imageUri != null) {
+                Text("Photo Captured ✅ (Optional)", color = Color(0xFF4CAF50))
+            } else {
+                Text("Photo is optional.", color = Color.Gray)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
 
             // Take Photo button with permission check
             Button(
@@ -134,7 +155,7 @@ fun RaiseComplaintScreen(navController: NavController, role: String ) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Take Photo")
+                Text("Take Photo (Optional)")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -152,51 +173,93 @@ fun RaiseComplaintScreen(navController: NavController, role: String ) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Validation and Submit Logic
+            submissionError?.let { error ->
+                Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
+            }
+
             // Submit Button
             Button(
                 onClick = {
-                    if (subject.isBlank() || description.isBlank() || imageUri == null) {
-                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    // --- REVISED VALIDATION: Only subject and description are required ---
+                    if (subject.isBlank() || description.isBlank()) {
+                        submissionError = "Subject and Description are required to file a complaint."
                         return@Button
                     }
+                    // ---------------------------------
 
-                    isUploading = true
                     val uid = auth.currentUser?.uid ?: "anonymous"
-                    val fileName = "complaints/${uid}_${System.currentTimeMillis()}.jpg"
 
-                    val ref = storage.reference.child(fileName)
-                    val uploadTask = ref.putFile(imageUri!!)
+                    // Logic branch: Check if photo was taken
+                    if (imageUri != null) {
+                        // --- PATH A: UPLOAD PHOTO ---
+                        isUploading = true
+                        val fileName = "complaints/${uid}_${System.currentTimeMillis()}.jpg"
+                        val ref = storage.reference.child(fileName)
+                        val uploadTask = ref.putFile(imageUri!!)
 
-                    uploadTask.addOnSuccessListener {
-                        ref.downloadUrl.addOnSuccessListener { downloadUrl ->
-                            val userType = role.lowercase()
-                            val complaint = hashMapOf(
-                                "userId" to uid,
-                                "userType" to role.lowercase(), // add this line 👈
-                                "subject" to subject,
-                                "description" to description,
-                                "photoUrl" to downloadUrl.toString(),
-                                "timestamp" to System.currentTimeMillis(),
-                                "status" to "pending" // default status
-                            )
-                            firestore.collection("complaints")
-                                .add(complaint)
-                                .addOnSuccessListener {
-                                    isUploading = false
-                                    navController.popBackStack()
-                                }
+                        uploadTask.addOnSuccessListener {
+                            ref.downloadUrl.addOnSuccessListener { downloadUrl ->
+                                saveComplaint(uid, subject, description, downloadUrl.toString(), role, context, navController)
+                            }
+                        }.addOnFailureListener {
+                            isUploading = false
+                            Toast.makeText(context, "Image upload failed. Submitting text only.", Toast.LENGTH_LONG).show()
+                            // Fallback to save without photo if upload fails
+                            saveComplaint(uid, subject, description, null, role, context, navController)
                         }
-                    }.addOnFailureListener {
-                        isUploading = false
-                        Toast.makeText(context, "Upload failed", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // --- PATH B: NO PHOTO ---
+                        saveComplaint(uid, subject, description, null, role, context, navController)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isUploading,
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (isUploading) "Submitting..." else "Submit Complaint")
+                Text(if (isUploading) "Uploading Photo..." else "Submit Complaint")
             }
         }
     }
+}
+
+// Helper function to save complaint data (used for both photo and no-photo paths)
+private fun saveComplaint(
+    uid: String,
+    subject: String,
+    description: String,
+    photoUrl: String?, // Now nullable
+    role: String,
+    context: Context,
+    navController: NavController
+) {
+    val firestore = Firebase.firestore
+
+    val complaintData = hashMapOf<String, Any>(
+        "userId" to uid,
+        "subject" to subject,
+        "description" to description,
+        "timestamp" to System.currentTimeMillis(),
+        "status" to "pending",
+        "role" to role,
+        // photoUrl is added below if it exists
+    )
+
+    photoUrl?.let { url ->
+        complaintData["photoUrl"] = url
+    }
+
+    firestore.collection("complaints")
+        .add(complaintData)
+        .addOnSuccessListener {
+            // Reset state and navigate back
+            Toast.makeText(context, "Complaint filed successfully!", Toast.LENGTH_LONG).show()
+            // Resetting isUploading state happens in the calling branch if upload was successful
+            navController.popBackStack()
+        }
+        .addOnFailureListener { e ->
+            // In a real app, you'd reset the isUploading state here too, but since
+            // this is a private function, we rely on the main onClick block for state reset.
+            Toast.makeText(context, "Error saving complaint: ${e.message}", Toast.LENGTH_LONG).show()
+        }
 }

@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.ui.text)
     implementation(libs.androidx.foundation)
+    implementation(libs.androidx.scenecore)
 
     // REMOVED: implementation(libs.firebase.functions.ktx) - We'll use the hardcoded one below or the BOM
 
@@ -148,6 +149,4 @@ dependencies {
     // Gemini
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
-    // ⚠️ REMOVED THE CONFLICTING LINE:
-    // implementation("com.google.firebase:firebase-functions-ktx:22.1.0")
 }
