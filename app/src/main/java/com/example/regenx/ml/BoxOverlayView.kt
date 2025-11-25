@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 
@@ -17,7 +18,7 @@ class BoxOverlayView(context: Context, attrs: AttributeSet?) : View(context, att
     }
     private val textPaint = Paint().apply {
         color = Color.WHITE
-        textSize = 40f
+        textSize = 50f // Bigger text
         style = Paint.Style.FILL
         isAntiAlias = true
     }
@@ -33,19 +34,42 @@ class BoxOverlayView(context: Context, attrs: AttributeSet?) : View(context, att
     }
 
     override fun onDraw(canvas: Canvas) {
+        val w = width.toFloat()
+        val h = height.toFloat()
+
         for (res in results) {
-            val box = res.boundingBox
+            // CONVERT PERCENTAGE TO SCREEN PIXELS
+            // res.boundingBox contains values like 0.5 (50%)
+            // We multiply by screen width/height to get actual pixels
+            val left = res.boundingBox.left * w
+            val top = res.boundingBox.top * h
+            val right = res.boundingBox.right * w
+            val bottom = res.boundingBox.bottom * h
+
+            val box = RectF(left, top, right, bottom)
+
+            // Draw the Box
             canvas.drawRect(box, boxPaint)
 
+            // Draw the Text
             val label = "${res.label} ${(res.confidence * 100).toInt()}%"
 
-            // Calculate text position
-            // If box is at the very top, draw text INSIDE the box
-            var textY = box.top - 10f
-            if (textY < 50f) textY = box.top + 50f
+            // Ensure text doesn't go off the top of the screen
+            var textY = box.top - 15f
+            if (textY < 60f) textY = box.top + 60f
 
             val textWidth = textPaint.measureText(label)
-            canvas.drawRect(box.left, textY - 40f, box.left + textWidth + 20f, textY + 10f, bgPaint)
+
+            // Draw background for text
+            canvas.drawRect(
+                box.left,
+                textY - 50f,
+                box.left + textWidth + 20f,
+                textY + 10f,
+                bgPaint
+            )
+
+            // Draw text on top of the bounding box
             canvas.drawText(label, box.left + 10f, textY, textPaint)
         }
     }

@@ -2,6 +2,7 @@ package com.example.regenx.ml
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.RectF
 import android.util.Log
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
@@ -11,12 +12,10 @@ import java.util.Collections
 import kotlin.math.max
 import kotlin.math.min
 
-import android.graphics.RectF
-
 data class DetectionResult(
     val label: String,
     val confidence: Float,
-    val boundingBox: android.graphics.RectF
+    val boundingBox: RectF // Stores Percentages (0.0 to 1.0)
 )
 
 class WasteDetector(context: Context) {
@@ -30,7 +29,6 @@ class WasteDetector(context: Context) {
             val modelBytes = context.assets.open("regenx_waste.onnx").use { it.readBytes() }
             session = env.createSession(modelBytes, OrtSession.SessionOptions())
 
-            // Auto-detect input size
             val inputInfo = session?.inputInfo
             if (inputInfo != null) {
                 inputName = inputInfo.keys.first()
@@ -38,6 +36,7 @@ class WasteDetector(context: Context) {
                 val shape = tensorInfo?.shape
                 if (shape != null && shape.size == 4) {
                     inputSize = shape[3].toInt()
+                    Log.i("ReGenX", "🔹 Model Loaded! Input Size: $inputSize")
                 }
             }
         } catch (e: Exception) {
@@ -50,22 +49,19 @@ class WasteDetector(context: Context) {
         if (session == null) return emptyList()
 
         try {
-            // 1. Preprocess
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
             val floatBuffer = convertBitmapToFloatBuffer(resizedBitmap)
 
-            // 2. Inference
             val inputTensor = OnnxTensor.createTensor(env, floatBuffer, longArrayOf(1, 3, inputSize.toLong(), inputSize.toLong()))
             val results = session?.run(Collections.singletonMap(inputName, inputTensor))
 
-            // 3. Read Output
             val outputTensor = results?.get(0) as? OnnxTensor
             val rawOutput = outputTensor?.floatBuffer
             val shape = outputTensor?.info?.shape
 
             val detections = if (rawOutput != null && shape != null) {
-                val rawList = processOutput(rawOutput, shape, bitmap.width, bitmap.height)
-                applyNMS(rawList) // Clean up duplicate boxes
+                val rawList = processOutput(rawOutput, shape)
+                applyNMS(rawList)
             } else {
                 emptyList()
             }
@@ -87,7 +83,6 @@ class WasteDetector(context: Context) {
         val intValues = IntArray(count)
         bitmap.getPixels(intValues, 0, inputSize, 0, 0, inputSize, inputSize)
 
-        // Standard YOLOv8 normalization (0-1)
         for (i in 0 until count) buffer.put(((intValues[i] shr 16) and 0xFF) / 255.0f)
         for (i in 0 until count) buffer.put(((intValues[i] shr 8) and 0xFF) / 255.0f)
         for (i in 0 until count) buffer.put((intValues[i] and 0xFF) / 255.0f)
@@ -96,13 +91,12 @@ class WasteDetector(context: Context) {
         return buffer
     }
 
-    private fun processOutput(buffer: FloatBuffer, shape: LongArray, origW: Int, origH: Int): List<DetectionResult> {
+    private fun processOutput(buffer: FloatBuffer, shape: LongArray): List<DetectionResult> {
         val detections = ArrayList<DetectionResult>()
 
-        // Determine layout [Batch, Channels, Anchors]
         val dim1 = shape[1].toInt()
         val dim2 = shape[2].toInt()
-        val isTransposed = dim1 > dim2 // if 8400 > 84
+        val isTransposed = dim1 > dim2
         val numAnchors = if (isTransposed) dim1 else dim2
         val numClasses = (if (isTransposed) dim2 else dim1) - 4
 
@@ -111,7 +105,6 @@ class WasteDetector(context: Context) {
         buffer.get(data)
 
         for (i in 0 until numAnchors) {
-            // Find best class score
             var maxScore = 0f
             var maxClass = -1
             for (c in 0 until numClasses) {
@@ -123,8 +116,7 @@ class WasteDetector(context: Context) {
                 }
             }
 
-            // Use 0.50 threshold to avoid garbage background noise
-            if (maxScore > 0.50f) {
+            if (maxScore > 0.40f) {
                 val cx: Float; val cy: Float; val w: Float; val h: Float
 
                 if (isTransposed) {
@@ -134,22 +126,19 @@ class WasteDetector(context: Context) {
                     cx = data[i]; cy = data[numAnchors + i]; w = data[2*numAnchors + i]; h = data[3*numAnchors + i]
                 }
 
-                // SMART SCALING: Check if coordinates are Normalized (0-1)
-                // If w < 2.0, it's definitely normalized (since image is 320px wide)
-                val isNormalized = (w < 2.0f && h < 2.0f)
+                // --- FORCE NORMALIZATION (0.0 to 1.0) ---
+                // We divide by inputSize (320) to get a percentage.
+                // Example: If box is at 160, 160/320 = 0.5 (50% of screen)
 
-                val scaleX = if (isNormalized) origW.toFloat() else (origW.toFloat() / inputSize)
-                val scaleY = if (isNormalized) origH.toFloat() else (origH.toFloat() / inputSize)
-
-                val left = (cx - w/2) * scaleX
-                val top = (cy - h/2) * scaleY
-                val right = (cx + w/2) * scaleX
-                val bottom = (cy + h/2) * scaleY
+                val left = (cx - w/2) / inputSize
+                val top = (cy - h/2) / inputSize
+                val right = (cx + w/2) / inputSize
+                val bottom = (cy + h/2) / inputSize
 
                 detections.add(DetectionResult(
                     label = getLabelName(maxClass),
                     confidence = maxScore,
-                    boundingBox = android.graphics.RectF(left, top, right, bottom)
+                    boundingBox = RectF(left, top, right, bottom)
                 ))
             }
         }
@@ -173,7 +162,7 @@ class WasteDetector(context: Context) {
         return selected
     }
 
-    private fun calculateIoU(a: android.graphics.RectF, b: android.graphics.RectF): Float {
+    private fun calculateIoU(a: RectF, b: RectF): Float {
         val intersection = RectF(max(a.left, b.left), max(a.top, b.top), min(a.right, b.right), min(a.bottom, b.bottom))
         if (intersection.left >= intersection.right || intersection.top >= intersection.bottom) return 0f
         val interArea = intersection.width() * intersection.height()
