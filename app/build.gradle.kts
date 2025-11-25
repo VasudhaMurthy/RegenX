@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.androidx.ui.text)
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.scenecore)
+    implementation(libs.androidx.compose.foundation)
 
     // REMOVED: implementation(libs.firebase.functions.ktx) - We'll use the hardcoded one below or the BOM
 
@@ -149,4 +150,8 @@ dependencies {
     // Gemini
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
+    implementation("com.google.firebase:firebase-firestore-ktx:24.6.0")
+// check latest
+    implementation("com.google.firebase:firebase-auth-ktx:22.1.0")
+    implementation("androidx.compose.material:material:<compose-version>")
 }

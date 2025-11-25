@@ -105,13 +105,13 @@ fun ScrapCollectorDashboard(navController: NavController) {
                 onClick = { navController.navigate("pickupRequests") }
             )
 
-            FeatureCard(
-                title = "Route Optimization",
-                description = "Plan the best route for pickups today",
-                icon = Icons.Default.Map,
-                gradient = Brush.linearGradient(listOf(Color(0xFFA5D6A7), Color(0xFF66BB6A))),
-                onClick = { navController.navigate("routeOptimization") }
-            )
+//            FeatureCard(
+//                title = "Route Optimization",
+//                description = "Plan the best route for pickups today",
+//                icon = Icons.Default.Map,
+//                gradient = Brush.linearGradient(listOf(Color(0xFFA5D6A7), Color(0xFF66BB6A))),
+//                onClick = { navController.navigate("routeOptimization") }
+//            )
 
             FeatureCard(
                 title = "Collected Scrap Log",
@@ -122,11 +122,11 @@ fun ScrapCollectorDashboard(navController: NavController) {
             )
 
             FeatureCard(
-                title = "Report Issue",
-                description = "Report any problem on your collection route",
+                title = "Scrap Score",
+                description = "Rate the quality of scrap you purchased",
                 icon = Icons.Default.ReportProblem,
                 gradient = Brush.linearGradient(listOf(Color(0xFFFFCC80), Color(0xFFFFA726))),
-                onClick = { navController.navigate("reportIssue") }
+                onClick = { navController.navigate("scrap_score") }
             )
 
             // Tip of the Day
