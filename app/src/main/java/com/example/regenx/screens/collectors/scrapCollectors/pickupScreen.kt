@@ -511,7 +511,10 @@ private fun NearbyPickupRequestsContent() {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     wasteType,
@@ -519,10 +522,22 @@ private fun NearbyPickupRequestsContent() {
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Spacer(Modifier.height(4.dp))
-                                Text("Quantity: $quantity", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-                                Text("Category: $category", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "Quantity: $quantity",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    "Category: $category",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Spacer(Modifier.height(6.dp))
-                                Text("Status: ${status.replaceFirstChar { it.uppercase() }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                                Text(
+                                    "Status: ${status.replaceFirstChar { it.uppercase() }}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
 
                             // Status badge simplified inline (small)
@@ -531,7 +546,10 @@ private fun NearbyPickupRequestsContent() {
                                 "pending" -> Text("Pending", color = Color(0xFFFFA726))
                                 "accepted" -> Text("Accepted", color = Color(0xFF64B5F6))
                                 "sold", "collected" -> Text("Sold", color = Color(0xFFE57373))
-                                else -> Text(status.replaceFirstChar { it.uppercase() }, color = MaterialTheme.colorScheme.onSurface)
+                                else -> Text(
+                                    status.replaceFirstChar { it.uppercase() },
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
                             }
 
                             Spacer(Modifier.width(8.dp))
@@ -551,9 +569,17 @@ private fun NearbyPickupRequestsContent() {
                             Column(modifier = Modifier.padding(top = 12.dp)) {
                                 Divider(color = MaterialTheme.colorScheme.outline)
                                 Spacer(Modifier.height(8.dp))
-                                Text("Notes: ${if (notes.isBlank()) "—" else notes}", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    "Notes: ${if (notes.isBlank()) "—" else notes}",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                                 Spacer(Modifier.height(8.dp))
-                                Text("Collector ID: $collectorId", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    "Collector ID: $collectorId",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
                                 Spacer(Modifier.height(12.dp))
 
                                 val currentUser = auth.currentUser
@@ -567,7 +593,11 @@ private fun NearbyPickupRequestsContent() {
                                             onClick = {
                                                 // Transactional purchase: only if status is still "available"
                                                 if (currentUser == null) {
-                                                    Toast.makeText(context, "Please sign in to purchase", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Please sign in to purchase",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
                                                     return@Button
                                                 }
                                                 if (loadingPurchaseForId != null) return@Button
@@ -576,14 +606,17 @@ private fun NearbyPickupRequestsContent() {
                                                 val buyerId = currentUser.uid
                                                 val buyerName = currentUser.displayName ?: ""
 
-                                                val wasteRef = db.collection("wasteForSale").document(docId)
-                                                val purchaseRef = db.collection("purchases").document()
+                                                val wasteRef =
+                                                    db.collection("wasteForSale").document(docId)
+                                                val purchaseRef =
+                                                    db.collection("purchases").document()
 
                                                 val confirmationProofUrl = uploadedProofPath
 
                                                 db.runTransaction { transaction ->
                                                     val wasteSnap = transaction.get(wasteRef)
-                                                    val currentStatus = wasteSnap.getString("status") ?: "available"
+                                                    val currentStatus =
+                                                        wasteSnap.getString("status") ?: "available"
                                                     if (currentStatus != "available") {
                                                         throw Exception("not_available")
                                                     }
@@ -613,13 +646,25 @@ private fun NearbyPickupRequestsContent() {
                                                     null
                                                 }.addOnSuccessListener {
                                                     loadingPurchaseForId = null
-                                                    Toast.makeText(context, "Purchase requested — waiting for collector to accept.", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Purchase requested — waiting for collector to accept.",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
                                                 }.addOnFailureListener { ex ->
                                                     loadingPurchaseForId = null
                                                     if (ex.message?.contains("not_available") == true) {
-                                                        Toast.makeText(context, "Sorry — this item was already requested or sold.", Toast.LENGTH_LONG).show()
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Sorry — this item was already requested or sold.",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
                                                     } else {
-                                                        Toast.makeText(context, "Purchase failed: ${ex.message}", Toast.LENGTH_LONG).show()
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Purchase failed: ${ex.message}",
+                                                            Toast.LENGTH_LONG
+                                                        ).show()
                                                     }
                                                 }
                                             },
@@ -628,11 +673,23 @@ private fun NearbyPickupRequestsContent() {
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             if (loadingPurchaseForId == docId) {
-                                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(
+                                                        18.dp
+                                                    ),
+                                                    strokeWidth = 2.dp,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
                                                 Spacer(Modifier.width(8.dp))
-                                                Text("Requesting...", color = MaterialTheme.colorScheme.onPrimary)
+                                                Text(
+                                                    "Requesting...",
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
                                             } else {
-                                                Text("Purchase", color = MaterialTheme.colorScheme.onPrimary)
+                                                Text(
+                                                    "Purchase",
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
                                             }
                                         }
                                     }
@@ -640,11 +697,17 @@ private fun NearbyPickupRequestsContent() {
                                     "pending" -> {
                                         // If current user is the buyer who requested -> show waiting state; else show disabled note
                                         if (currentUid != null && currentUid == purchasedBy) {
-                                            Text("Request pending — waiting for collector to accept.", color = MaterialTheme.colorScheme.onSurface)
+                                            Text(
+                                                "Request pending — waiting for collector to accept.",
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
                                             Spacer(Modifier.height(8.dp))
                                             // Allow cancel (optional). Not implemented here automatically.
                                         } else {
-                                            Text("Already requested by another buyer.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "Already requested by another buyer.",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
                                     }
 
@@ -658,48 +721,73 @@ private fun NearbyPickupRequestsContent() {
                                                     loadingFinalizeForId = docId
 
                                                     val buyerId = currentUid
-                                                    val wasteRef = db.collection("wasteForSale").document(docId)
+                                                    val wasteRef = db.collection("wasteForSale")
+                                                        .document(docId)
                                                     val purchaseRefId = purchaseId
                                                     if (purchaseRefId.isNullOrBlank()) {
-                                                        Toast.makeText(context, "No purchase record found.", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(
+                                                            context,
+                                                            "No purchase record found.",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
                                                         loadingFinalizeForId = null
                                                         return@Button
                                                     }
-                                                    val purchaseRef = db.collection("purchases").document(purchaseRefId)
+                                                    val purchaseRef = db.collection("purchases")
+                                                        .document(purchaseRefId)
                                                     val buyerConfirmationUrl = uploadedProofPath
 
                                                     db.runTransaction { transaction ->
                                                         val wasteSnap = transaction.get(wasteRef)
-                                                        val currentStatus = wasteSnap.getString("status") ?: "available"
-                                                        val currentPurchasedBy = wasteSnap.getString("purchasedBy") ?: ""
+                                                        val currentStatus =
+                                                            wasteSnap.getString("status")
+                                                                ?: "available"
+                                                        val currentPurchasedBy =
+                                                            wasteSnap.getString("purchasedBy") ?: ""
                                                         if (currentStatus != "accepted" || currentPurchasedBy != buyerId) {
                                                             throw Exception("cannot_finalize")
                                                         }
 
                                                         // set terminal state on waste doc
-                                                        transaction.update(wasteRef, mapOf(
-                                                            "status" to "sold",
-                                                            "soldAt" to FieldValue.serverTimestamp(),
-                                                            "buyerConfirmationUrl" to buyerConfirmationUrl
-                                                        ))
+                                                        transaction.update(
+                                                            wasteRef, mapOf(
+                                                                "status" to "sold",
+                                                                "soldAt" to FieldValue.serverTimestamp(),
+                                                                "buyerConfirmationUrl" to buyerConfirmationUrl
+                                                            )
+                                                        )
 
                                                         // update purchase to collected
-                                                        transaction.update(purchaseRef, mapOf(
-                                                            "status" to "collected",
-                                                            "collectedAt" to FieldValue.serverTimestamp(),
-                                                            "buyerConfirmationUrl" to buyerConfirmationUrl
-                                                        ))
+                                                        transaction.update(
+                                                            purchaseRef, mapOf(
+                                                                "status" to "collected",
+                                                                "collectedAt" to FieldValue.serverTimestamp(),
+                                                                "buyerConfirmationUrl" to buyerConfirmationUrl
+                                                            )
+                                                        )
 
                                                         null
                                                     }.addOnSuccessListener {
                                                         loadingFinalizeForId = null
-                                                        Toast.makeText(context, "Pickup acknowledged — thank you!", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(
+                                                            context,
+                                                            "Pickup acknowledged — thank you!",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
                                                     }.addOnFailureListener { ex ->
                                                         loadingFinalizeForId = null
                                                         if (ex.message?.contains("cannot_finalize") == true) {
-                                                            Toast.makeText(context, "This pickup cannot be finalised (status changed).", Toast.LENGTH_LONG).show()
+                                                            Toast.makeText(
+                                                                context,
+                                                                "This pickup cannot be finalised (status changed).",
+                                                                Toast.LENGTH_LONG
+                                                            ).show()
                                                         } else {
-                                                            Toast.makeText(context, "Could not finalise pickup: ${ex.message}", Toast.LENGTH_LONG).show()
+                                                            Toast.makeText(
+                                                                context,
+                                                                "Could not finalise pickup: ${ex.message}",
+                                                                Toast.LENGTH_LONG
+                                                            ).show()
                                                         }
                                                     }
                                                 },
@@ -708,25 +796,46 @@ private fun NearbyPickupRequestsContent() {
                                                 modifier = Modifier.fillMaxWidth()
                                             ) {
                                                 if (loadingFinalizeForId == docId) {
-                                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(
+                                                            18.dp
+                                                        ),
+                                                        strokeWidth = 2.dp,
+                                                        color = MaterialTheme.colorScheme.onPrimary
+                                                    )
                                                     Spacer(Modifier.width(8.dp))
-                                                    Text("Finalising...", color = MaterialTheme.colorScheme.onPrimary)
+                                                    Text(
+                                                        "Finalising...",
+                                                        color = MaterialTheme.colorScheme.onPrimary
+                                                    )
                                                 } else {
-                                                    Text("Acknowledge Pickup", color = MaterialTheme.colorScheme.onPrimary)
+                                                    Text(
+                                                        "Acknowledge Pickup",
+                                                        color = MaterialTheme.colorScheme.onPrimary
+                                                    )
                                                 }
                                             }
                                         } else {
                                             // Not the buyer — waiting for buyer to acknowledge
-                                            Text("Accepted — waiting for buyer to acknowledge pickup.", color = MaterialTheme.colorScheme.onSurface)
+                                            Text(
+                                                "Accepted — waiting for buyer to acknowledge pickup.",
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
                                         }
                                     }
 
                                     "sold", "collected" -> {
-                                        Text("Completed — item already collected.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            "Completed — item already collected.",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
 
                                     else -> {
-                                        Text("Status: ${status}", color = MaterialTheme.colorScheme.onSurface)
+                                        Text(
+                                            "Status: ${status}",
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
                                     }
                                 }
 
@@ -742,41 +851,61 @@ private fun NearbyPickupRequestsContent() {
                                             if (loadingAcceptForId != null) return@Button
                                             loadingAcceptForId = docId
 
-                                            val wasteRef = db.collection("wasteForSale").document(docId)
+                                            val wasteRef =
+                                                db.collection("wasteForSale").document(docId)
 
                                             db.runTransaction { transaction ->
                                                 val wasteSnap = transaction.get(wasteRef)
-                                                val currentStatus = wasteSnap.getString("status") ?: "available"
-                                                val existingPurchaseId = wasteSnap.getString("purchaseId")
+                                                val currentStatus =
+                                                    wasteSnap.getString("status") ?: "available"
+                                                val existingPurchaseId =
+                                                    wasteSnap.getString("purchaseId")
                                                 if (currentStatus != "pending" || existingPurchaseId.isNullOrBlank()) {
                                                     throw Exception("cannot_accept")
                                                 }
 
                                                 // update wasteForSale to accepted
-                                                transaction.update(wasteRef, mapOf(
-                                                    "status" to "accepted",
-                                                    "acceptedAt" to FieldValue.serverTimestamp(),
-                                                    "acceptedByCollectorId" to signedInUid
-                                                ))
+                                                transaction.update(
+                                                    wasteRef, mapOf(
+                                                        "status" to "accepted",
+                                                        "acceptedAt" to FieldValue.serverTimestamp(),
+                                                        "acceptedByCollectorId" to signedInUid
+                                                    )
+                                                )
 
                                                 // update purchase doc to accepted
                                                 val purchaseRefId = existingPurchaseId
-                                                val purchaseRef = db.collection("purchases").document(purchaseRefId)
-                                                transaction.update(purchaseRef, mapOf(
-                                                    "status" to "accepted",
-                                                    "acceptedAt" to FieldValue.serverTimestamp()
-                                                ))
+                                                val purchaseRef = db.collection("purchases")
+                                                    .document(purchaseRefId)
+                                                transaction.update(
+                                                    purchaseRef, mapOf(
+                                                        "status" to "accepted",
+                                                        "acceptedAt" to FieldValue.serverTimestamp()
+                                                    )
+                                                )
 
                                                 null
                                             }.addOnSuccessListener {
                                                 loadingAcceptForId = null
-                                                Toast.makeText(context, "Request accepted. Buyer will be notified.", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(
+                                                    context,
+                                                    "Request accepted. Buyer will be notified.",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
                                             }.addOnFailureListener { ex ->
                                                 loadingAcceptForId = null
                                                 if (ex.message?.contains("cannot_accept") == true) {
-                                                    Toast.makeText(context, "This request cannot be accepted (status changed).", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(
+                                                        context,
+                                                        "This request cannot be accepted (status changed).",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
                                                 } else {
-                                                    Toast.makeText(context, "Could not accept: ${ex.message}", Toast.LENGTH_LONG).show()
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Could not accept: ${ex.message}",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
                                                 }
                                             }
                                         },
@@ -785,11 +914,21 @@ private fun NearbyPickupRequestsContent() {
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
                                         if (loadingAcceptForId == docId) {
-                                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(18.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Accepting...", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                            Text(
+                                                "Accepting...",
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
                                         } else {
-                                            Text("Accept", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                                            Text(
+                                                "Accept",
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
                                         }
                                     }
                                 }
@@ -802,8 +941,15 @@ private fun NearbyPickupRequestsContent() {
             // placeholder when empty
             if (wasteList.isEmpty()) {
                 item {
-                    Box(modifier = Modifier.fillMaxSize().height(200.dp), contentAlignment = Alignment.Center) {
-                        Text("No nearby pickup requests yet. Check back soon!", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Box(
+                        modifier = Modifier.fillMaxSize().height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "No nearby pickup requests yet. Check back soon!",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

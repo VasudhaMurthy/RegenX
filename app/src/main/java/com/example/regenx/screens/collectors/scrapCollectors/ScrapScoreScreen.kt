@@ -437,7 +437,7 @@ fun submitRatingAndSetScrapRating(
         .get()
         .addOnSuccessListener { query ->
             if (!query.isEmpty) {
-                onFailure(FirebaseFirestoreException("You have already rated this purchase", FirebaseFirestoreException.Code.ABORTED))
+                onFailure(FirebaseFirestoreException("You have rated this purchase", FirebaseFirestoreException.Code.ABORTED))
                 return@addOnSuccessListener
             }
 

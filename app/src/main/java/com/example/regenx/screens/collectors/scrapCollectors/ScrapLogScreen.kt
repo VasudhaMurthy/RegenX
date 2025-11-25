@@ -131,6 +131,7 @@ fun ScrapLogScreen(navController: NavController) {
 //                    },
 //                    shape = CircleShape
 //                )
+
             }
 
             Spacer(modifier = Modifier.height(8.dp))
