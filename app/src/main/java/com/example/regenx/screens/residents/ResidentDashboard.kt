@@ -25,10 +25,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.regenx.R // Ensure this is your actual package for resources
 
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import com.example.regenx.ui.ScannerActivity
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResidentDashboard(navController: NavController) {
     var residentName by remember { mutableStateOf("Resident") }
+
+    // 2. ADD THIS LINE to get the Android Context
+    val context = LocalContext.current
 
     // Fetch resident name from Firestore
     LaunchedEffect(Unit) {
@@ -131,7 +138,10 @@ fun ResidentDashboard(navController: NavController) {
                 description = "Scan your waste to get instant segregation tips",
                 icon = Icons.Default.CameraAlt,
                 gradient = Brush.linearGradient(colors = listOf(Color(0xFFA5D6A7), Color(0xFF66BB6A))),
-                onClick = { navController.navigate("wasteSegregation") }
+                onClick = {
+                    val intent = Intent(context, ScannerActivity::class.java)
+                    context.startActivity(intent)
+                }
             )
 
             FeatureCard(

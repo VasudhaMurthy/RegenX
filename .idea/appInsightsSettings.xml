@@ -10,9 +10,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.example.regenx" />
-                  <option name="mobileSdkAppId" value="1:942086189752:android:893e40241e03455c577a4d" />
-                  <option name="projectId" value="regenx-64f99" />
-                  <option name="projectNumber" value="942086189752" />
+                  <option name="mobileSdkAppId" value="1:532308756001:android:6f3486f21f1b2ef9808560" />
+                  <option name="projectId" value="regenx-18" />
+                  <option name="projectNumber" value="532308756001" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

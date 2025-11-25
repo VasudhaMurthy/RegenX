@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.regenx"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -140,13 +140,61 @@ dependencies {
     // Location/Maps/Database (Kept hardcoded versions where necessary)
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation("com.google.firebase:firebase-database:20.3.0")
-    implementation ("androidx.appcompat:appcompat:1.7.0")
-    implementation ("com.google.maps.android:maps-compose:2.11.4")
-    implementation ("com.google.android.gms:play-services-maps:18.1.0")
-    implementation ("com.google.firebase:firebase-firestore:24.4.6") // Version conflicts handled by BOM
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    implementation("com.google.android.gms:play-services-maps:18.1.0")
+    implementation("com.google.firebase:firebase-firestore:24.4.6") // Version conflicts handled by BOM
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Gemini
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
+
+    //onnx model
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+
+    //camera access for ai
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+// CameraX core library using the camera2 implementation
+    val cameraxVersion = "1.3.1" // Stable version
+    implementation("androidx.camera:camera-core:${cameraxVersion}")
+    implementation("androidx.camera:camera-camera2:${cameraxVersion}")
+
+    // If you want to use the CameraX Lifecycle library
+    implementation("androidx.camera:camera-lifecycle:${cameraxVersion}")
+
+    // If you want to use the CameraX VideoCapture library
+    implementation("androidx.camera:camera-video:${cameraxVersion}")
+
+    // CameraX View class (For PreviewView)
+    implementation("androidx.camera:camera-view:${cameraxVersion}")
+
+    // CameraX Extensions library (optional)
+    implementation("androidx.camera:camera-extensions:${cameraxVersion}")
+
+    // CameraX Core
+    implementation("androidx.camera:camera-core:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+
+    // CameraX Lifecycle (Fixes ProcessCameraProvider)
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+
+    // CameraX View (Fixes PreviewView)
+    implementation("androidx.camera:camera-view:1.3.1")
+
+    // Fixes "Cannot access class ListenableFuture" error
+    implementation("com.google.guava:guava:31.1-android")
+
+// Ensures concurrent features work smoothly with CameraX
+    implementation("androidx.concurrent:concurrent-futures:1.1.0")
+
+    implementation("com.google.android.material:material:1.11.0")
+
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.0")
+
+    implementation ("androidx.appcompat:appcompat:1.6.1")
+    implementation ("com.google.android.material:material:1.11.0")
+    implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
 }
