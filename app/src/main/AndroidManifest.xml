@@ -2,19 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28"/> <!-- optional for older devices -->
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -27,12 +26,10 @@
         android:theme="@style/Theme.RegenX"
         tools:targetApi="31">
 
-        <!-- Google Maps API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBuYLxxZpbcFBupOi4QWh3TTlZy24Oq7IM"/>
 
-        <!-- Firebase messaging -->
         <service
             android:name=".backend.MyFirebaseMessagingService"
             android:exported="false">
@@ -41,14 +38,12 @@
             </intent-filter>
         </service>
 
-        <!-- Collector location tracking -->
         <service
             android:name=".backend.CollectorLocationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
 
-        <!-- Main launcher activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -61,13 +56,10 @@
             </intent-filter>
         </activity>
 
-        <!-- Collector dashboard (separate activity if needed) -->
         <activity
-            android:name=".collector.CollectorDashboardActivity"
-            android:exported="true"
-            android:theme="@style/Theme.RegenX" />
+            android:name=".ui.ScannerActivity"
+            android:theme="@style/Theme.RegenX.Scanner" />
 
-        <!-- FileProvider for complaint image capture -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.example.regenx.fileprovider"
@@ -80,7 +72,5 @@
 
 
     </application>
-
-
 
 </manifest>
