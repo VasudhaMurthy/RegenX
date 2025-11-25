@@ -100,6 +100,7 @@ fun PostWasteScreen(navController: NavController) {
                 )
             )
 
+
             // --- 2. Quantity ---
             OutlinedTextField(
                 value = quantity,
