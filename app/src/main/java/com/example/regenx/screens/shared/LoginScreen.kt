@@ -147,7 +147,7 @@ fun LoginScreen(navController: NavController, role: String) {
                     // Start of existing logic
                     val loginEmail = when (role.uppercase()) {
                         "COLLECTOR" -> "$identifier@collectors.regenx.com"
-                        "OFFICIAL" -> "$identifier@officials.regenx.com" // Assuming structure for Official
+                        "OFFICIAL" -> "$identifier@gov.ac.in" // Assuming structure for Official
                         else -> identifier
                     }
 
