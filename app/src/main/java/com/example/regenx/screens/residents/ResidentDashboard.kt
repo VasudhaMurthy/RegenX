@@ -388,14 +388,6 @@ fun ResidentDashboard(navController: NavController) {
                     )
 
                     FeatureCard(
-                        title = "Nearby Scrap Collectors",
-                        description = "Find the nearest verified collectors on the map",
-                        icon = Icons.Default.LocationOn,
-                        gradient = Brush.linearGradient(colors = listOf(Color(0xFF90CAF9), Color(0xFF42A5F5))),
-                        onClick = { navController.navigate("scrapCollectorMap") }
-                    )
-
-                    FeatureCard(
                         title = "SwaBhaVi (Raise Complaint)",
                         description = "Report missed pickups or illegal dumping",
                         icon = Icons.Default.ReportProblem,

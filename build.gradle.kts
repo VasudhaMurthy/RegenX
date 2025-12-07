@@ -8,4 +8,4 @@ plugins {
 
     // NEW: You MUST add this line for Kotlin 2.0 + Compose to work!
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21" apply false
-}
+}9

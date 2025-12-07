@@ -26,9 +26,13 @@
         android:theme="@style/Theme.RegenX"
         tools:targetApi="31">
 
+<!--        <meta-data-->
+<!--            android:name="com.google.android.geo.API_KEY"-->
+<!--            android:value="AIzaSyBuYLxxZpbcFBupOi4QWh3TTlZy24Oq7IM"/>-->
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBuYLxxZpbcFBupOi4QWh3TTlZy24Oq7IM"/>
+            android:value="@string/google_maps_key" />
 
         <service
             android:name=".backend.MyFirebaseMessagingService"

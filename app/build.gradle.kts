@@ -22,14 +22,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Existing Gemini key config (keep as you had it)
         buildConfigField(
             "String",
             "GEMINI_API_KEY",
-            // The fallback should be a string containing a double quote,
-            // which is why we use an inner \" instead of just ""
             "\"${project.findProperty("GEMINI_API_KEY") ?: "UNDEFINED"}\""
         )
+
+        // 🔹 NEW: expose MAPS_API_KEY as a string resource
+        val mapsApiKey = (project.findProperty("MAPS_API_KEY") as? String) ?: ""
+        resValue("string", "google_maps_key", mapsApiKey)
     }
+
 
     buildTypes {
         release {
@@ -202,4 +207,9 @@ dependencies {
     implementation ("androidx.appcompat:appcompat:1.6.1")
     implementation ("com.google.android.material:material:1.11.0")
     implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
+
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
 }

@@ -138,7 +138,7 @@ fun AppNavGraph() {
 
         // 🔹 Resident Routes
         composable("residentDashboard") { ResidentDashboard(navController) }
-        composable("locateGarbageTruck") { LocateGarbageTruckScreen() }
+        composable("locateGarbageTruck") { LocateGarbageTruckScreen(navController) }
         composable("resident_settings") { ResidentSettingsScreen(navController) }
 
         // 🔹 Collector Routes
