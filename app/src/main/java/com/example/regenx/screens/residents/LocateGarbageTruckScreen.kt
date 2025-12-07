@@ -551,7 +551,7 @@ fun LocateGarbageTruckScreen(navController: NavController) {
             }
         }
 
-        // Back button
+
         IconButton(
             onClick = { navController.popBackStack() },
             modifier = Modifier

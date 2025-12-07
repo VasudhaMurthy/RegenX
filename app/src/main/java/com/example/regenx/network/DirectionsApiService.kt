@@ -68,7 +68,7 @@ object DirectionsApiService {
     private val client = OkHttpClient()
 
     /**
-     * Calls Google Directions API and returns the JSON response.
+     * Calls Google Directions API and returns the JSON response
      *
      * Returns null ONLY if:
      *  - the HTTP call throws an exception, or

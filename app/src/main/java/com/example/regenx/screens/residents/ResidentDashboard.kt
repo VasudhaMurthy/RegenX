@@ -443,7 +443,6 @@ fun TipOfTheDayCard() {
     }
 }
 
-
 // --- Feature Card (Using colorful gradients) ---
 @Composable
 fun FeatureCard(
