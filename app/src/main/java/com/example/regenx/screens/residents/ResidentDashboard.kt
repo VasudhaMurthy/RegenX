@@ -157,7 +157,6 @@ fun ResidentDashboard(navController: NavController) {
                         ),
                         onClick = { navController.navigate("locateGarbageTruck") }
                     )
-
 //                    FeatureCard(
 //                        title = "Waste Segregation (AI)",
 //                        description = "Scan your waste to get instant segregation tips",

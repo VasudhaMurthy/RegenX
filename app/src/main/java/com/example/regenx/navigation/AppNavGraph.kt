@@ -26,7 +26,6 @@ import com.example.regenx.screens.residents.AskAiScreen
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
-
     NavHost(navController = navController, startDestination = "splash") {
 
         // 🔹 Common Screens

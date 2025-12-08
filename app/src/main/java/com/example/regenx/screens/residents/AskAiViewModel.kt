@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.google.ai.client.generativeai.GenerativeModel
 import com.example.regenx.BuildConfig
 import kotlinx.coroutines.launch
-
 data class ChatMessage(
     val text: String,
     val isUser: Boolean

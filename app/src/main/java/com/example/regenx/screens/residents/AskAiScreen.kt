@@ -290,7 +290,6 @@ fun AskAiScreen(
                     }
                 }
             }
-
             if (isLoading) {
                 LinearProgressIndicator(
                     modifier = Modifier
