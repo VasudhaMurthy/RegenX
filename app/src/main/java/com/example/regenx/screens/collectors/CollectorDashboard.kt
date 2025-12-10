@@ -59,7 +59,7 @@ fun CollectorDashboard(navController: NavController) {
     // Load collector display name
     LaunchedEffect(currentUid) {
         currentUid?.let { uid ->
-            FirebaseFirestore.getInstance().collection("users")
+            FirebaseFirestore.getInstance().collection("collectors")
                 .document(uid)
                 .get()
                 .addOnSuccessListener { document ->

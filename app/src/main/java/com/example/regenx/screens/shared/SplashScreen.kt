@@ -38,23 +38,53 @@ fun SplashScreen(navController: NavController) {
         delay(1500) // Keep splash for 1.5 sec
 
         val currentUser = auth.currentUser
-        if (currentUser != null) {
-            try {
-                val doc = firestore.collection("users").document(currentUser.uid).get().await()
-                val role = doc.getString("role") ?: "RESIDENT"
 
-                when (role) {
-                    "RESIDENT" -> navController.navigate("residentDashboard") { popUpTo(0) }
-                    "COLLECTOR" -> navController.navigate("collectorDashboard") { popUpTo(0) }
-                    "OFFICIAL" -> navController.navigate("officialDashboard") { popUpTo(0) }
-                    else -> navController.navigate("roleChoice") { popUpTo(0) }
+        if (currentUser == null) {
+            // Not logged in → go to role choice
+            navController.navigate("roleChoice") { popUpTo(0) }
+            return@LaunchedEffect
+        }
+
+        val uid = currentUser.uid
+
+        // User is logged in. Check role by finding the user's document in the role-specific collections.
+        try {
+            var destinationRoute = "roleChoice"
+
+            // Check for document existence in role-specific collections
+
+            // 1. Check for RESIDENT (Most common fallback, check first)
+            val residentDoc = firestore.collection("residents").document(uid).get().await()
+
+            // 2. Check for COLLECTOR
+            val collectorDoc = firestore.collection("collectors").document(uid).get().await()
+
+            // 3. Check for OFFICIAL
+            val officialDoc = firestore.collection("officials").document(uid).get().await()
+
+            when {
+                officialDoc.exists() -> {
+                    // Check for lastScreen preference in the OFFICIAL document
+                    val lastScreen = officialDoc.getString("lastScreen")
+                    destinationRoute = lastScreen ?: "officialDashboard"
                 }
-            } catch (e: Exception) {
-                // If fetching role fails, go to home
-                navController.navigate("roleChoice") { popUpTo(0) }
+                collectorDoc.exists() -> {
+                    // Check for lastScreen preference in the COLLECTOR document
+                    val lastScreen = collectorDoc.getString("lastScreen")
+                    destinationRoute = lastScreen ?: "collectorDashboard"
+                }
+                residentDoc.exists() -> {
+                    // Check for lastScreen preference in the RESIDENT document
+                    val lastScreen = residentDoc.getString("lastScreen")
+                    destinationRoute = lastScreen ?: "residentDashboard"
+                }
+                // Default remains 'roleChoice' if document isn't found in any collection
             }
-        } else {
-            // Not logged in → go to role choice or home
+
+            navController.navigate(destinationRoute) { popUpTo(0) }
+
+        } catch (e: Exception) {
+            // If fetching fails (e.g., network error)
             navController.navigate("roleChoice") { popUpTo(0) }
         }
     }

@@ -219,7 +219,7 @@ fun OfficialDashboard(navController: NavController) {
     LaunchedEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         uid?.let {
-            FirebaseFirestore.getInstance().collection("users")
+            FirebaseFirestore.getInstance().collection("officials")
                 .document(it)
                 .get()
                 .addOnSuccessListener { document ->

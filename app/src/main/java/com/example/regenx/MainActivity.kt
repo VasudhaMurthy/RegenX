@@ -675,6 +675,51 @@
 //}
 
 
+//package com.example.regenx
+//
+//import android.os.Bundle
+//import androidx.activity.ComponentActivity
+//import androidx.activity.compose.setContent
+//import com.example.regenx.ui.theme.RegenXTheme
+//import com.example.regenx.navigation.AppNavGraph
+//import com.google.firebase.FirebaseApp
+//import com.google.firebase.firestore.ktx.firestore
+//import com.google.firebase.ktx.Firebase
+//import com.google.firebase.firestore.FirebaseFirestoreSettings
+//import com.google.firebase.messaging.FirebaseMessaging
+//import android.util.Log
+//
+//class MainActivity : ComponentActivity() {
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//
+//        // ✅ Ensure Firebase is initialized before any Firestore or Storage call
+//        try {
+//            FirebaseApp.initializeApp(this)
+//
+//            // Optional but recommended for stability in debug
+//            val settings = FirebaseFirestoreSettings.Builder()
+//                .setPersistenceEnabled(false)
+//                .build()
+//            Firebase.firestore.firestoreSettings = settings
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//
+//        setContent {
+//            RegenXTheme {
+//                AppNavGraph()
+//            }
+//        }
+//        requestAndLogFcmToken()
+//    }
+//}
+
+
+
+
+
+
 package com.example.regenx
 
 import android.os.Bundle
@@ -686,8 +731,16 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.messaging.FirebaseMessaging
+import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 class MainActivity : ComponentActivity() {
+
+    private val TAG = "MainActivity"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -709,6 +762,57 @@ class MainActivity : ComponentActivity() {
                 AppNavGraph()
             }
         }
+        // Call the defined function
+        requestAndLogFcmToken()
+    }
+
+    /**
+     * Retrieves the current device's FCM token and logs it.
+     * It also ensures the token is saved to the current user's Firestore document.
+     */
+    private fun requestAndLogFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            // Get new FCM registration token
+            val token = task.result
+
+            Log.d(TAG, "FCM Token: $token")
+
+            // IMPORTANT: Immediately save the token to Firestore for the currently logged-in user.
+            // This ensures the resident's data is available for the Cloud Function.
+            saveTokenToFirestore(token)
+        }
+    }
+
+    /**
+     * Saves the FCM token to the Firestore document for the current authenticated user (Resident).
+     */
+    private fun saveTokenToFirestore(token: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            // This is expected if the user hasn't logged in yet.
+            Log.w(TAG, "User not authenticated yet. Skipping token save to Firestore.")
+            return
+        }
+
+        val tokenMap = hashMapOf(
+            "fcmToken" to token,
+            "tokenLastUpdated" to System.currentTimeMillis()
+        )
+
+        FirebaseFirestore.getInstance()
+            .collection("residents") // Target the residents collection
+            .document(userId)
+            .set(tokenMap as Map<String, Any>, SetOptions.merge()) // Use SetOptions.merge() to keep existing data
+            .addOnSuccessListener {
+                Log.i(TAG, "FCM token saved successfully for resident $userId")
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to save initial FCM token for resident $userId", e)
+            }
     }
 }
-
