@@ -2,24 +2,35 @@
 //
 //import android.content.Context
 //import android.graphics.Bitmap
+//import android.graphics.BitmapFactory
 //import android.graphics.Canvas
 //import android.util.Log
 //import androidx.compose.foundation.layout.Box
 //import androidx.compose.foundation.layout.fillMaxSize
 //import androidx.compose.foundation.layout.padding
+//import androidx.compose.material.icons.Icons
+//import androidx.compose.material.icons.filled.ArrowBack
+//import androidx.compose.material3.Icon
+//import androidx.compose.material3.IconButton
+//import androidx.compose.material3.MaterialTheme
+//import androidx.compose.material3.Text
 //import androidx.compose.runtime.*
 //import androidx.compose.ui.Alignment
 //import androidx.compose.ui.Modifier
+//import androidx.compose.ui.graphics.Color
 //import androidx.compose.ui.platform.LocalContext
 //import androidx.compose.ui.unit.dp
 //import androidx.core.content.ContextCompat
 //import androidx.navigation.NavController
 //import com.example.regenx.R
+//import com.example.regenx.network.DirectionsApiService
 //import com.google.android.gms.maps.CameraUpdateFactory
 //import com.google.android.gms.maps.model.BitmapDescriptor
 //import com.google.android.gms.maps.model.BitmapDescriptorFactory
 //import com.google.android.gms.maps.model.CameraPosition
 //import com.google.android.gms.maps.model.LatLng
+//import com.google.android.gms.maps.model.LatLngBounds
+//import com.google.android.gms.tasks.Task
 //import com.google.firebase.auth.FirebaseAuth
 //import com.google.firebase.firestore.FirebaseFirestore
 //import com.google.firebase.firestore.ListenerRegistration
@@ -28,34 +39,34 @@
 //import com.google.maps.android.compose.MarkerState
 //import com.google.maps.android.compose.Polyline
 //import com.google.maps.android.compose.rememberCameraPositionState
-//import androidx.compose.material.icons.Icons
-//import androidx.compose.material.icons.filled.ArrowBack
-//import androidx.compose.material3.Icon
-//import androidx.compose.material3.IconButton
-//import androidx.compose.material3.MaterialTheme
-//import androidx.compose.ui.graphics.Color
+//import kotlinx.coroutines.CancellationException
+//import kotlinx.coroutines.tasks.await
+//import org.json.JSONObject
 //
 //@Composable
 //fun LocateGarbageTruckScreen(navController: NavController) {
 //
 //    val context = LocalContext.current
 //
-//    // List of (truckId, position)
+//    // Resident + trucks
+//    var residentLatLng by remember { mutableStateOf<LatLng?>(null) }
 //    var truckList by remember { mutableStateOf<List<Pair<String, LatLng>>>(emptyList()) }
-//    var isLoadingTrucks by remember { mutableStateOf(true) }
 //
-//    // Logged-in resident location
-//    var residentPosition by remember { mutableStateOf<LatLng?>(null) }
-//    var isLoadingResident by remember { mutableStateOf(true) }
+//    // Directions / route
+//    var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+//    var etaText by remember { mutableStateOf("") }
+//    var hasRequestedRoute by remember { mutableStateOf(false) }
 //
-//    // Bigger marker icon (60dp x 60dp)
+//    val apiKey = LocalContext.current.getString(R.string.google_maps_key)
+//
+//    // Truck icon (green truck); falls back to green marker if it fails
 //    val truckIcon: BitmapDescriptor? = remember {
 //        try {
-//            bitmapDescriptorFromVector(
+//            bitmapDescriptorFromResource(
 //                context = context,
-//                vectorResId = R.drawable.ic_truck,
-//                widthDp = 60,
-//                heightDp = 60
+//                resId = R.drawable.ic_truck,   // your drawable
+//                widthDp = 64,
+//                heightDp = 64
 //            )
 //        } catch (e: Exception) {
 //            Log.e("LocateGarbageTruck", "Error creating truck icon", e)
@@ -63,165 +74,209 @@
 //        }
 //    }
 //
-//    // Camera state – start somewhere neutral
 //    val cameraPositionState = rememberCameraPositionState {
 //        position = CameraPosition.fromLatLngZoom(LatLng(0.0, 0.0), 14f)
 //    }
 //
-//    // --- Firestore listener for TRUCKS ---
+//    // 1) Fetch resident lat/lng from residents/{uid}
+//    LaunchedEffect(Unit) {
+//        val user = FirebaseAuth.getInstance().currentUser
+//        if (user == null) {
+//            Log.w("LocateGarbageTruck", "No logged-in user")
+//            return@LaunchedEffect
+//        }
+//
+//        val uid = user.uid
+//
+//        val snapshot = FirebaseFirestore.getInstance()
+//            .collection("residents")
+//            .document(uid)
+//            .get()
+//            .awaitOrNull()
+//
+//        if (snapshot == null || !snapshot.exists()) {
+//            Log.w("LocateGarbageTruck", "No resident doc found for uid=$uid")
+//            return@LaunchedEffect
+//        }
+//
+//        val lat = snapshot.getDouble("latitude")
+//        val lng = snapshot.getDouble("longitude")
+//
+//        if (lat == null || lng == null) {
+//            Log.w("LocateGarbageTruck", "Resident lat/lng missing on document")
+//            return@LaunchedEffect
+//        }
+//
+//        val pos = LatLng(lat, lng)
+//        residentLatLng = pos
+//        Log.d("LocateGarbageTruck", "Resident lat/lng from Firestore: $lat, $lng")
+//
+//        cameraPositionState.animate(
+//            CameraUpdateFactory.newLatLngZoom(pos, 15f)
+//        )
+//    }
+//
+//    // 2) Listen to trucks collection
 //    DisposableEffect(Unit) {
 //        val registration: ListenerRegistration =
 //            FirebaseFirestore.getInstance()
 //                .collection("trucks")
 //                .addSnapshotListener { snapshot, e ->
-//                    Log.d(
-//                        "LocateGarbageTruck",
-//                        "snapshot null? ${snapshot == null}, error: $e"
-//                    )
-//
 //                    if (e != null) {
 //                        Log.e("LocateGarbageTruck", "Error fetching trucks", e)
-//                        isLoadingTrucks = false
 //                        return@addSnapshotListener
 //                    }
 //
 //                    if (snapshot != null) {
-//                        val updatedList = mutableListOf<Pair<String, LatLng>>()
-//
-//                        for (doc in snapshot.documents) {
+//                        val updated = snapshot.documents.mapNotNull { doc ->
 //                            val lat = doc.getDouble("latitude")
 //                            val lng = doc.getDouble("longitude")
-//
 //                            if (lat != null && lng != null) {
-//                                updatedList.add(doc.id to LatLng(lat, lng))
-//                            } else {
-//                                Log.w(
-//                                    "LocateGarbageTruck",
-//                                    "Missing lat/lng for truck ${doc.id}"
-//                                )
-//                            }
+//                                Log.d("LocateGarbageTruck", "Truck ${doc.id}: $lat, $lng")
+//                                doc.id to LatLng(lat, lng)
+//                            } else null
 //                        }
-//
-//                        truckList = updatedList
-//                        isLoadingTrucks = false
-//                    } else {
-//                        isLoadingTrucks = false
+//                        truckList = updated
 //                    }
 //                }
 //
-//        onDispose {
-//            registration.remove()
-//        }
+//        onDispose { registration.remove() }
 //    }
 //
-//    // --- Firestore listener / fetch for RESIDENT (current user) ---
-//    DisposableEffect(Unit) {
-//        val uid = FirebaseAuth.getInstance().currentUser?.uid
-//        var registration: ListenerRegistration? = null
+//    // 3) Once resident + at least 1 truck loaded, compute route (or straight line)
+//    LaunchedEffect(residentLatLng, truckList) {
+//        if (hasRequestedRoute) return@LaunchedEffect
+//        val res = residentLatLng ?: return@LaunchedEffect
+//        if (truckList.isEmpty()) return@LaunchedEffect
 //
-//        if (uid != null) {
-//            registration = FirebaseFirestore.getInstance()
-//                .collection("residents")          // <--- change if your collection name is different
-//                .document(uid)                    // <--- assuming doc id = user uid
-//                .addSnapshotListener { snapshot, e ->
-//                    if (e != null) {
-//                        Log.e("LocateGarbageTruck", "Error fetching resident", e)
-//                        isLoadingResident = false
-//                        return@addSnapshotListener
-//                    }
+//        val nearest = truckList.minByOrNull { (_, truckPos) ->
+//            val dx = truckPos.latitude - res.latitude
+//            val dy = truckPos.longitude - res.longitude
+//            dx * dx + dy * dy
+//        } ?: return@LaunchedEffect
 //
-//                    if (snapshot != null && snapshot.exists()) {
-//                        val lat = snapshot.getDouble("latitude")
-//                        val lng = snapshot.getDouble("longitude")
+//        val truckPos = nearest.second
+//        Log.d("LocateGarbageTruck", "Nearest truck at ${truckPos.latitude},${truckPos.longitude}")
 //
-//                        if (lat != null && lng != null) {
-//                            residentPosition = LatLng(lat, lng)
-//                            Log.d("LocateGarbageTruck", "Resident at $lat,$lng")
-//                        } else {
-//                            Log.w("LocateGarbageTruck", "Missing resident lat/lng")
-//                        }
-//                    }
-//                    isLoadingResident = false
+//        // Show both locations
+//        try {
+//            val bounds = LatLngBounds.builder()
+//                .include(res)
+//                .include(truckPos)
+//                .build()
+//            cameraPositionState.animate(
+//                CameraUpdateFactory.newLatLngBounds(bounds, 120)
+//            )
+//        } catch (e: Exception) {
+//            cameraPositionState.animate(
+//                CameraUpdateFactory.newLatLngZoom(res, 14f)
+//            )
+//        }
+//
+//        // Directions API call, fallback to straight line if no route
+//        try {
+//            val response: JSONObject? = DirectionsApiService.getRoute(
+//                origin = "${truckPos.latitude},${truckPos.longitude}",
+//                destination = "${res.latitude},${res.longitude}",
+//                apiKey = apiKey
+//            )
+//
+//            if (response != null) {
+//                val status = response.optString("status")
+//                val errorMsg = response.optString("error_message")
+//                Log.d("LocateGarbageTruck", "Directions status = $status, error = $errorMsg")
+//
+//                if (status == "OK") {
+//                    val routes = response.getJSONArray("routes")
+//                    val route0 = routes.getJSONObject(0)
+//                    val legs = route0.getJSONArray("legs").getJSONObject(0)
+//
+//                    etaText = legs
+//                        .getJSONObject("duration")
+//                        .getString("text")
+//
+//                    val polyline = route0
+//                        .getJSONObject("overview_polyline")
+//                        .getString("points")
+//
+//                    routePoints = decodePolyline(polyline)
+//                    Log.d(
+//                        "LocateGarbageTruck",
+//                        "Route points from Directions: ${routePoints.size}, ETA: $etaText"
+//                    )
+//                } else {
+//                    Log.w(
+//                        "LocateGarbageTruck",
+//                        "Directions not OK ($status). Using straight line."
+//                    )
+//                    routePoints = listOf(truckPos, res)
 //                }
-//        } else {
-//            Log.w("LocateGarbageTruck", "No logged-in user")
-//            isLoadingResident = false
+//            } else {
+//                Log.w("LocateGarbageTruck", "Directions response null, using straight line")
+//                routePoints = listOf(truckPos, res)
+//            }
+//        } catch (e: CancellationException) {
+//            Log.w("LocateGarbageTruck", "Directions coroutine cancelled")
+//        } catch (e: Exception) {
+//            Log.e("LocateGarbageTruck", "Directions API failed, using straight line", e)
+//            routePoints = listOf(truckPos, res)
 //        }
 //
-//        onDispose {
-//            registration?.remove()
-//        }
+//        hasRequestedRoute = true
 //    }
 //
-//    // Move camera: priority -> resident, then first truck
-//    LaunchedEffect(residentPosition, truckList) {
-//        when {
-//            residentPosition != null -> {
-//                cameraPositionState.animate(
-//                    CameraUpdateFactory.newCameraPosition(
-//                        CameraPosition.fromLatLngZoom(residentPosition!!, 15f)
-//                    )
-//                )
-//            }
-//            truckList.isNotEmpty() -> {
-//                val firstTruckPos = truckList.first().second
-//                cameraPositionState.animate(
-//                    CameraUpdateFactory.newCameraPosition(
-//                        CameraPosition.fromLatLngZoom(firstTruckPos, 15f)
-//                    )
-//                )
-//            }
-//        }
-//    }
-//
-//    // Compute nearest truck to resident (if both are available)
-//    val nearestTruckToResident: LatLng? =
-//        if (residentPosition != null && truckList.isNotEmpty()) {
-//            val res = residentPosition!!
-//            truckList.minByOrNull { (_, truckPos) ->
-//                val dx = truckPos.latitude - res.latitude
-//                val dy = truckPos.longitude - res.longitude
-//                dx * dx + dy * dy           // squared distance is enough
-//            }?.second
-//        } else null
-//
-//    // Layout with map + back button overlay
+//    // ---------- UI ----------
 //    Box(modifier = Modifier.fillMaxSize()) {
 //
 //        GoogleMap(
 //            modifier = Modifier.fillMaxSize(),
 //            cameraPositionState = cameraPositionState
 //        ) {
-//            // Mark all trucks
-//            truckList.forEach { (truckId, position) ->
+//            // Resident marker
+//            residentLatLng?.let {
 //                Marker(
-//                    state = MarkerState(position = position),
-//                    title = "Garbage Truck: $truckId",
-//                    snippet = "Live Location",
+//                    state = MarkerState(it),
+//                    title = "Your house"
+//                )
+//            }
+//
+//            // Truck markers
+//            truckList.forEach { (id, pos) ->
+//                Marker(
+//                    state = MarkerState(pos),
+//                    title = "Garbage Truck: $id",
 //                    icon = truckIcon
+//                        ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
 //                )
 //            }
 //
-//            // Mark resident house (default marker)
-//            residentPosition?.let { resPos ->
-//                Marker(
-//                    state = MarkerState(position = resPos),
-//                    title = "Your House",
-//                    snippet = "Resident"
-//                )
-//            }
-//
-//            // Draw line between resident and nearest truck
-//            if (residentPosition != null && nearestTruckToResident != null) {
+//            // Route polyline (Directions or straight line)
+//            if (routePoints.isNotEmpty()) {
 //                Polyline(
-//                    points = listOf(residentPosition!!, nearestTruckToResident),
+//                    points = routePoints,
 //                    color = Color.Blue,
-//                    width = 8f
+//                    width = 10f
 //                )
 //            }
 //        }
 //
-//        // Back button
+//        // ETA label (only if we got it)
+//        if (etaText.isNotBlank()) {
+//            Box(
+//                modifier = Modifier
+//                    .align(Alignment.TopCenter)
+//                    .padding(top = 72.dp)
+//            ) {
+//                Text(
+//                    text = "ETA: $etaText",
+//                    color = Color.White,
+//                    modifier = Modifier
+//                        .padding(horizontal = 16.dp, vertical = 8.dp)
+//                )
+//            }
+//        }
+//
+//
 //        IconButton(
 //            onClick = { navController.popBackStack() },
 //            modifier = Modifier
@@ -237,31 +292,75 @@
 //    }
 //}
 //
-///**
-// * Helper to convert a vector or png drawable to BitmapDescriptor with a given size.
-// */
-//fun bitmapDescriptorFromVector(
+///** Truck icon from PNG/vector resource, scaled */
+//fun bitmapDescriptorFromResource(
 //    context: Context,
-//    vectorResId: Int,
-//    widthDp: Int = 32,
-//    heightDp: Int = 32
+//    resId: Int,
+//    widthDp: Int,
+//    heightDp: Int
 //): BitmapDescriptor {
-//
-//    val drawable = ContextCompat.getDrawable(context, vectorResId)
-//        ?: throw IllegalArgumentException("Resource $vectorResId not found")
-//
 //    val density = context.resources.displayMetrics.density
 //    val widthPx = (widthDp * density).toInt()
 //    val heightPx = (heightDp * density).toInt()
 //
-//    val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
-//    val canvas = Canvas(bitmap)
+//    val original = BitmapFactory.decodeResource(context.resources, resId)
+//        ?: throw IllegalArgumentException("Resource $resId not found")
 //
-//    drawable.setBounds(0, 0, widthPx, heightPx)
-//    drawable.draw(canvas)
-//
-//    return BitmapDescriptorFactory.fromBitmap(bitmap)
+//    val scaled = Bitmap.createScaledBitmap(original, widthPx, heightPx, true)
+//    return BitmapDescriptorFactory.fromBitmap(scaled)
 //}
+//
+///** Generic awaitOrNull for any Task<T> */
+//suspend fun <T> Task<T>.awaitOrNull(): T? {
+//    return try {
+//        this.await()
+//    } catch (e: Exception) {
+//        null
+//    }
+//}
+//
+///** Polyline decoder for Directions API encoded path */
+//fun decodePolyline(encoded: String): List<LatLng> {
+//    val poly = ArrayList<LatLng>()
+//    var index = 0
+//    val len = encoded.length
+//    var lat = 0
+//    var lng = 0
+//
+//    while (index < len) {
+//        var b: Int
+//        var shift = 0
+//        var result = 0
+//        do {
+//            b = encoded[index++].code - 63
+//            result = result or (b and 0x1f shl shift)
+//            shift += 5
+//        } while (b >= 0x20)
+//        val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+//        lat += dlat
+//
+//        shift = 0
+//        result = 0
+//        do {
+//            b = encoded[index++].code - 63
+//            result = result or (b and 0x1f shl shift)
+//            shift += 5
+//        } while (b >= 0x20)
+//        val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+//        lng += dlng
+//
+//        poly.add(
+//            LatLng(
+//                lat / 1E5,
+//                lng / 1E5
+//            )
+//        )
+//    }
+//    return poly
+//}
+
+
+
 
 
 
@@ -278,42 +377,26 @@ package com.example.regenx.screens.residents
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
 import android.util.Log
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.regenx.R
 import com.example.regenx.network.DirectionsApiService
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.tasks.Task
+import com.google.android.gms.maps.model.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.Polyline
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
@@ -323,117 +406,77 @@ fun LocateGarbageTruckScreen(navController: NavController) {
 
     val context = LocalContext.current
 
-    // Resident + trucks
     var residentLatLng by remember { mutableStateOf<LatLng?>(null) }
     var truckList by remember { mutableStateOf<List<Pair<String, LatLng>>>(emptyList()) }
 
-    // Directions / route
     var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
     var etaText by remember { mutableStateOf("") }
-    var hasRequestedRoute by remember { mutableStateOf(false) }
 
-    val apiKey = LocalContext.current.getString(R.string.google_maps_key)
+    val apiKey = context.getString(R.string.google_maps_key)
 
-    // Truck icon (green truck); falls back to green marker if it fails
     val truckIcon: BitmapDescriptor? = remember {
         try {
-            bitmapDescriptorFromResource(
-                context = context,
-                resId = R.drawable.ic_truck,   // your drawable
-                widthDp = 64,
-                heightDp = 64
-            )
+            bitmapDescriptorFromResource(context, R.drawable.ic_truck, 64, 64)
         } catch (e: Exception) {
-            Log.e("LocateGarbageTruck", "Error creating truck icon", e)
             null
         }
     }
 
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(0.0, 0.0), 14f)
-    }
+    val cameraPositionState = rememberCameraPositionState()
 
-    // 1) Fetch resident lat/lng from residents/{uid}
+    /* ------------------ FETCH RESIDENT LOCATION ------------------ */
     LaunchedEffect(Unit) {
-        val user = FirebaseAuth.getInstance().currentUser
-        if (user == null) {
-            Log.w("LocateGarbageTruck", "No logged-in user")
-            return@LaunchedEffect
-        }
-
-        val uid = user.uid
-
-        val snapshot = FirebaseFirestore.getInstance()
+        val user = FirebaseAuth.getInstance().currentUser ?: return@LaunchedEffect
+        val doc = FirebaseFirestore.getInstance()
             .collection("residents")
-            .document(uid)
+            .document(user.uid)
             .get()
-            .awaitOrNull()
+            .await()
 
-        if (snapshot == null || !snapshot.exists()) {
-            Log.w("LocateGarbageTruck", "No resident doc found for uid=$uid")
-            return@LaunchedEffect
+        val lat = doc.getDouble("latitude")
+        val lng = doc.getDouble("longitude")
+
+        if (lat != null && lng != null) {
+            residentLatLng = LatLng(lat, lng)
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(residentLatLng!!, 15f)
+            )
         }
-
-        val lat = snapshot.getDouble("latitude")
-        val lng = snapshot.getDouble("longitude")
-
-        if (lat == null || lng == null) {
-            Log.w("LocateGarbageTruck", "Resident lat/lng missing on document")
-            return@LaunchedEffect
-        }
-
-        val pos = LatLng(lat, lng)
-        residentLatLng = pos
-        Log.d("LocateGarbageTruck", "Resident lat/lng from Firestore: $lat, $lng")
-
-        cameraPositionState.animate(
-            CameraUpdateFactory.newLatLngZoom(pos, 15f)
-        )
     }
 
-    // 2) Listen to trucks collection
+    /* ------------------ LISTEN TO TRUCK UPDATES ------------------ */
     DisposableEffect(Unit) {
-        val registration: ListenerRegistration =
+        val reg: ListenerRegistration =
             FirebaseFirestore.getInstance()
                 .collection("trucks")
                 .addSnapshotListener { snapshot, e ->
-                    if (e != null) {
-                        Log.e("LocateGarbageTruck", "Error fetching trucks", e)
-                        return@addSnapshotListener
-                    }
+                    if (e != null || snapshot == null) return@addSnapshotListener
 
-                    if (snapshot != null) {
-                        val updated = snapshot.documents.mapNotNull { doc ->
-                            val lat = doc.getDouble("latitude")
-                            val lng = doc.getDouble("longitude")
-                            if (lat != null && lng != null) {
-                                Log.d("LocateGarbageTruck", "Truck ${doc.id}: $lat, $lng")
-                                doc.id to LatLng(lat, lng)
-                            } else null
-                        }
-                        truckList = updated
+                    truckList = snapshot.documents.mapNotNull { doc ->
+                        val lat = doc.getDouble("latitude")
+                        val lng = doc.getDouble("longitude")
+                        if (lat != null && lng != null)
+                            doc.id to LatLng(lat, lng)
+                        else null
                     }
                 }
 
-        onDispose { registration.remove() }
+        onDispose { reg.remove() }
     }
 
-    // 3) Once resident + at least 1 truck loaded, compute route (or straight line)
+    /* ------------------ ROUTE + ETA LOGIC ------------------ */
     LaunchedEffect(residentLatLng, truckList) {
-        if (hasRequestedRoute) return@LaunchedEffect
         val res = residentLatLng ?: return@LaunchedEffect
         if (truckList.isEmpty()) return@LaunchedEffect
 
-        val nearest = truckList.minByOrNull { (_, truckPos) ->
-            val dx = truckPos.latitude - res.latitude
-            val dy = truckPos.longitude - res.longitude
+        val nearest = truckList.minByOrNull { (_, t) ->
+            val dx = t.latitude - res.latitude
+            val dy = t.longitude - res.longitude
             dx * dx + dy * dy
         } ?: return@LaunchedEffect
 
         val truckPos = nearest.second
-        Log.d("LocateGarbageTruck", "Nearest truck at ${truckPos.latitude},${truckPos.longitude}")
 
-        // Show both locations
         try {
             val bounds = LatLngBounds.builder()
                 .include(res)
@@ -442,13 +485,8 @@ fun LocateGarbageTruckScreen(navController: NavController) {
             cameraPositionState.animate(
                 CameraUpdateFactory.newLatLngBounds(bounds, 120)
             )
-        } catch (e: Exception) {
-            cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(res, 14f)
-            )
-        }
+        } catch (_: Exception) {}
 
-        // Directions API call, fallback to straight line if no route
         try {
             val response: JSONObject? = DirectionsApiService.getRoute(
                 origin = "${truckPos.latitude},${truckPos.longitude}",
@@ -456,76 +494,45 @@ fun LocateGarbageTruckScreen(navController: NavController) {
                 apiKey = apiKey
             )
 
-            if (response != null) {
-                val status = response.optString("status")
-                val errorMsg = response.optString("error_message")
-                Log.d("LocateGarbageTruck", "Directions status = $status, error = $errorMsg")
+            if (response != null && response.optString("status") == "OK") {
+                val route = response.getJSONArray("routes").getJSONObject(0)
+                val legs = route.getJSONArray("legs").getJSONObject(0)
 
-                if (status == "OK") {
-                    val routes = response.getJSONArray("routes")
-                    val route0 = routes.getJSONObject(0)
-                    val legs = route0.getJSONArray("legs").getJSONObject(0)
+                etaText = legs.getJSONObject("duration").getString("text")
 
-                    etaText = legs
-                        .getJSONObject("duration")
-                        .getString("text")
-
-                    val polyline = route0
-                        .getJSONObject("overview_polyline")
-                        .getString("points")
-
-                    routePoints = decodePolyline(polyline)
-                    Log.d(
-                        "LocateGarbageTruck",
-                        "Route points from Directions: ${routePoints.size}, ETA: $etaText"
-                    )
-                } else {
-                    Log.w(
-                        "LocateGarbageTruck",
-                        "Directions not OK ($status). Using straight line."
-                    )
-                    routePoints = listOf(truckPos, res)
-                }
+                val polyline =
+                    route.getJSONObject("overview_polyline").getString("points")
+                routePoints = decodePolyline(polyline)
             } else {
-                Log.w("LocateGarbageTruck", "Directions response null, using straight line")
                 routePoints = listOf(truckPos, res)
             }
         } catch (e: CancellationException) {
-            Log.w("LocateGarbageTruck", "Directions coroutine cancelled")
+            throw e
         } catch (e: Exception) {
-            Log.e("LocateGarbageTruck", "Directions API failed, using straight line", e)
             routePoints = listOf(truckPos, res)
         }
-
-        hasRequestedRoute = true
     }
 
-    // ---------- UI ----------
-    Box(modifier = Modifier.fillMaxSize()) {
+    /* ------------------ UI ------------------ */
+    Box(Modifier.fillMaxSize()) {
 
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState
         ) {
-            // Resident marker
             residentLatLng?.let {
-                Marker(
-                    state = MarkerState(it),
-                    title = "Your house"
-                )
+                Marker(state = MarkerState(it), title = "Your Home")
             }
 
-            // Truck markers
             truckList.forEach { (id, pos) ->
                 Marker(
                     state = MarkerState(pos),
-                    title = "Garbage Truck: $id",
+                    title = "Truck $id",
                     icon = truckIcon
                         ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                 )
             }
 
-            // Route polyline (Directions or straight line)
             if (routePoints.isNotEmpty()) {
                 Polyline(
                     points = routePoints,
@@ -535,22 +542,15 @@ fun LocateGarbageTruckScreen(navController: NavController) {
             }
         }
 
-        // ETA label (only if we got it)
         if (etaText.isNotBlank()) {
-            Box(
+            Text(
+                text = "ETA: $etaText",
+                color = Color.White,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 72.dp)
-            ) {
-                Text(
-                    text = "ETA: $etaText",
-                    color = Color.White,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
+            )
         }
-
 
         IconButton(
             onClick = { navController.popBackStack() },
@@ -558,16 +558,13 @@ fun LocateGarbageTruckScreen(navController: NavController) {
                 .align(Alignment.TopStart)
                 .padding(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
         }
     }
 }
 
-/** Truck icon from PNG/vector resource, scaled */
+/* ------------------ HELPERS ------------------ */
+
 fun bitmapDescriptorFromResource(
     context: Context,
     resId: Int,
@@ -575,34 +572,23 @@ fun bitmapDescriptorFromResource(
     heightDp: Int
 ): BitmapDescriptor {
     val density = context.resources.displayMetrics.density
-    val widthPx = (widthDp * density).toInt()
-    val heightPx = (heightDp * density).toInt()
-
-    val original = BitmapFactory.decodeResource(context.resources, resId)
-        ?: throw IllegalArgumentException("Resource $resId not found")
-
-    val scaled = Bitmap.createScaledBitmap(original, widthPx, heightPx, true)
+    val bmp = BitmapFactory.decodeResource(context.resources, resId)
+    val scaled = Bitmap.createScaledBitmap(
+        bmp,
+        (widthDp * density).toInt(),
+        (heightDp * density).toInt(),
+        true
+    )
     return BitmapDescriptorFactory.fromBitmap(scaled)
 }
 
-/** Generic awaitOrNull for any Task<T> */
-suspend fun <T> Task<T>.awaitOrNull(): T? {
-    return try {
-        this.await()
-    } catch (e: Exception) {
-        null
-    }
-}
-
-/** Polyline decoder for Directions API encoded path */
 fun decodePolyline(encoded: String): List<LatLng> {
     val poly = ArrayList<LatLng>()
     var index = 0
-    val len = encoded.length
     var lat = 0
     var lng = 0
 
-    while (index < len) {
+    while (index < encoded.length) {
         var b: Int
         var shift = 0
         var result = 0
@@ -611,8 +597,7 @@ fun decodePolyline(encoded: String): List<LatLng> {
             result = result or (b and 0x1f shl shift)
             shift += 5
         } while (b >= 0x20)
-        val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
-        lat += dlat
+        lat += if (result and 1 != 0) (result shr 1).inv() else result shr 1
 
         shift = 0
         result = 0
@@ -621,15 +606,9 @@ fun decodePolyline(encoded: String): List<LatLng> {
             result = result or (b and 0x1f shl shift)
             shift += 5
         } while (b >= 0x20)
-        val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
-        lng += dlng
+        lng += if (result and 1 != 0) (result shr 1).inv() else result shr 1
 
-        poly.add(
-            LatLng(
-                lat / 1E5,
-                lng / 1E5
-            )
-        )
+        poly.add(LatLng(lat / 1E5, lng / 1E5))
     }
     return poly
 }
