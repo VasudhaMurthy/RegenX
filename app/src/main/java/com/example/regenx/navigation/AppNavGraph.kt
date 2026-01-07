@@ -21,6 +21,7 @@ import com.example.regenx.screens.residents.ResidentSettingsScreen
 import com.example.regenx.screens.scrapbuyer.ScrapBuyerSettingsScreen
 import com.example.regenx.screens.collectors.scrapCollectors.ScrapLogScreen   // ✅ ADDED
 import com.example.regenx.screens.collectors.scrapCollectors.ScrapScoreScreen
+import com.example.regenx.screens.officials.GarbageAnalyticsScreen
 import com.example.regenx.screens.shared.*
 import com.example.regenx.screens.residents.AskAiScreen
 @Composable
@@ -70,6 +71,7 @@ fun AppNavGraph() {
         composable("officialDashboard") { OfficialDashboard(navController) }
         composable("official_settings") { OfficialSettingsScreen(navController) }
         composable("fleetManagement") { FleetManagementScreen(navController) }
+        composable("analyticsManagement") { GarbageAnalyticsScreen(navController) }
 
         // 🔹 Complaint Management
         composable("complaint/{role}") { backStackEntry ->
