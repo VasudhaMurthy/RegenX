@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.androidx.foundation)
     implementation(libs.androidx.scenecore)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.foundation)
 
     // REMOVED: implementation(libs.firebase.functions.ktx) - We'll use the hardcoded one below or the BOM
 

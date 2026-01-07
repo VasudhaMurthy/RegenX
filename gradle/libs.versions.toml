@@ -32,6 +32,7 @@ foundation = "1.8.3"
 firebaseFunctionsKtx = "22.1.0"
 scenecore = "1.0.0-alpha08"
 foundationVersion = "1.9.5"
+androidxFoundation = "1.10.0"
 
 [libraries]
 androidx-activity-compose-v181 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
@@ -77,6 +78,7 @@ androidx-foundation = { group = "androidx.compose.foundation", name = "foundatio
 firebase-functions-ktx = { group = "com.google.firebase", name = "firebase-functions-ktx", version.ref = "firebaseFunctionsKtx" }
 androidx-scenecore = { group = "androidx.xr.scenecore", name = "scenecore", version.ref = "scenecore" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" }
+foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxFoundation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
