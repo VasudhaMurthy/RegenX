@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.regenx.R
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.foundation.shape.RoundedCornerShape // Added for shapes
 
@@ -159,7 +161,10 @@ fun LoginScreen(navController: NavController, role: String) {
                     auth.signInWithEmailAndPassword(loginEmail, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                // Navigate according to role
+
+                                // ✅ FORCE FCM TOKEN REFRESH ON LOGIN
+                                refreshAndSaveFcmToken()
+
                                 val destination = when (role.uppercase()) {
                                     "RESIDENT" -> "residentDashboard"
                                     "SCRAP_BUYER" -> "scrapDashboard"
@@ -173,7 +178,8 @@ fun LoginScreen(navController: NavController, role: String) {
                                         popUpTo("login/$role") { inclusive = true }
                                     }
                                 }
-                            } else {
+                            }
+                            else {
                                 Toast.makeText(context, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -210,4 +216,23 @@ fun LoginScreen(navController: NavController, role: String) {
             )
         }
     }
+}
+private fun refreshAndSaveFcmToken() {
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+    FirebaseMessaging.getInstance().deleteToken()
+        .addOnCompleteListener {
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    val data = hashMapOf(
+                        "fcmToken" to token,
+                        "tokenUpdatedAt" to System.currentTimeMillis()
+                    )
+
+                    FirebaseFirestore.getInstance()
+                        .collection("residents")
+                        .document(uid)
+                        .set(data, SetOptions.merge())
+                }
+        }
 }

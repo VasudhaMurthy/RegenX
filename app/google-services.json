@@ -12,16 +12,7 @@
           "package_name": "com.example.regenx"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "942086189752-randomstringfromgoogle.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.regenx",
-            "certificate_hash": "2CBC48A60A52D6703334A55C185F60BFAABF2987"
-          }
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyBZ8yAFmfPTBJKhuaZZvwQJPVi2hH5OT_E"

@@ -46,81 +46,105 @@ exports.checkTruckGeofence = functions.firestore
         const truckId = context.params.truckId;
         const newTruckData = change.after.data();
 
-        // 1. Get new location and status
         const truckLat = newTruckData.latitude;
         const truckLng = newTruckData.longitude;
         const truckStatus = newTruckData.status;
 
-        // Skip if truck is not "En Route"
         if (truckStatus !== 'En Route' || !truckLat || !truckLng) {
-            console.log(`Truck ${truckId} is not En Route or missing location. Skipping check.`);
             return null;
         }
 
         const db = admin.firestore();
         const now = Date.now();
 
-        // 2. Calculate Bounding Box and Query Residents
         const box = boundingBox(truckLat, truckLng, GEOFENCE_RADIUS_M);
 
+        // ✅ FIXED QUERY (Admin SDK syntax)
         const residentsSnapshot = await db.collection('residents')
-            .whereGreaterThanOrEqualTo('latitude', box.minLat)
-            .whereLessThanOrEqualTo('latitude', box.maxLat)
+            .where('latitude', '>=', box.minLat)
+            .where('latitude', '<=', box.maxLat)
             .get();
 
         const alertPromises = [];
 
         residentsSnapshot.forEach(doc => {
-            // ... (rest of the logic for alert writing and FCM sending)
             const residentId = doc.id;
             const residentData = doc.data();
             const rLat = residentData.latitude;
             const rLng = residentData.longitude;
-            const residentToken = residentData.fcmToken;
 
-            if (!rLat || !rLng || !residentToken) return;
+            if (!rLat || !rLng) return;
 
-            // 3. Precise Geofence Check (Haversine)
             const distance = haversineDistanceMeters(truckLat, truckLng, rLat, rLng);
 
             if (distance <= GEOFENCE_RADIUS_M) {
-                // ... (Logic for de-duplication and sending FCM)
-                const alertsRef = db.collection('residents').doc(residentId).collection('alerts');
+                const alertsRef = db
+                    .collection('residents')
+                    .doc(residentId)
+                    .collection('alerts');
 
                 const checkAndSendAlert = async () => {
                     const cutoff = now - DAY_MILLIS;
+
+                    // ✅ FIXED QUERY (Admin SDK syntax)
                     const existingAlerts = await alertsRef
-                        .whereEqualTo("truckId", truckId)
-                        .whereGreaterThan("timestamp", cutoff)
+                        .where('truckId', '==', truckId)
+                        .where('timestamp', '>', cutoff)
                         .limit(1)
                         .get();
 
                     if (existingAlerts.empty) {
-                        const message = {
-                           notification: {
-                               title: 'RegenX Alert: Truck Approaching! 🚚',
-                               body: `The garbage truck is within 100m.`,
-                           },
-                           token: residentToken,
-                           data: { truckId: truckId, type: 'GEOFENCE_ENTER' }
-                       };
-                       await admin.messaging().send(message);
-
-                       // Write alert document after successful FCM send
-                       await alertsRef.add({
+                        await alertsRef.add({
                             truckId: truckId,
                             distanceMeters: distance,
                             message: "Garbage truck is nearby.",
                             timestamp: now,
                             seen: false
                         });
-                        console.log(`Alert written and FCM sent for resident ${residentId}`);
+                        console.log(`Alert written for resident ${residentId}`);
                     }
                 };
+
                 alertPromises.push(checkAndSendAlert());
             }
         });
 
         await Promise.allSettled(alertPromises);
         return null;
+    });
+
+exports.sendNotificationOnAlertCreate = functions.firestore
+    .document('residents/{uid}/alerts/{alertId}')
+    .onCreate(async (snap, context) => {
+
+        const uid = context.params.uid;
+        const alertData = snap.data();
+
+        const userDoc = await admin.firestore()
+            .collection('residents')
+            .doc(uid)
+            .get();
+
+        if (!userDoc.exists) return null;
+
+        const fcmToken = userDoc.data().fcmToken;
+        if (!fcmToken) return null;
+
+        const message = {
+            token: fcmToken,
+            notification: {
+                title: '🚛 Garbage Truck Nearby',
+                body: 'The garbage truck is approaching your home. Please be ready.'
+            },
+            android: {
+                priority: 'high',
+                notification: { sound: 'default' }
+            },
+            data: {
+                truckId: alertData.truckId,
+                type: 'GEOFENCE_ENTER'
+            }
+        };
+
+        return admin.messaging().send(message);
     });
